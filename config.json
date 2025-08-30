@@ -1,7 +1,7 @@
 {
-    "token": "MTEwNTc3NzU0MzI5MTg2NzE4Ng.GZCuUU.FouBPEU-n3uhnPg8E7HxEkfFSFRX7MV1RXoi6k",
-    "botID": "1105777543291867186",
-    "developerIds": ["456484704280117268", ""],
-    "devGuild": "1195838604564508744",
-    "sqliteFileName": "database.sqlite"
+    "token": "",
+    "botID": "",
+    "developerIds": [""],
+    "devGuild": "",
+    "sqliteFileName": ""
 }
