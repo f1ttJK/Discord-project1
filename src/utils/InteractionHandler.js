@@ -138,6 +138,7 @@ function createHandler(client) {
                     const component = client.components.get(baseId);
                     
                     if (!component) {
+                        client.logs.error(`Missing component handler for customId: "${interaction.customId}" (parsed baseId: "${baseId}")`);
                         throw new Error('This component doesn\'t exist.');
                     }
                     
