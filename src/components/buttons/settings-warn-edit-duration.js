@@ -69,11 +69,19 @@ module.exports = {
           )
         )
         .addSectionComponents(
-          new SectionBuilder().addTextDisplayComponents(
-            new TextDisplayBuilder().setContent(
-              `Длительность предупреждения: ${warnReason.punishmentDurationMin ? `${warnReason.punishmentDurationMin} мин` : 'не установлено'}`
+          new SectionBuilder()
+            .setButtonAccessory(
+              new ButtonBuilder()
+                .setStyle(ButtonStyle.Secondary)
+                .setLabel('⏱')
+                .setCustomId('noop')
+                .setDisabled(true)
             )
-          )
+            .addTextDisplayComponents(
+              new TextDisplayBuilder().setContent(
+                `Длительность предупреждения: ${warnReason.punishmentDurationMin ? `${warnReason.punishmentDurationMin} мин` : 'не установлено'}`
+              )
+            )
         )
         .addActionRowComponents(
           new ActionRowBuilder().addComponents(
