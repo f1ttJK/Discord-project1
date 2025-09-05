@@ -12,14 +12,16 @@ function parseCustomId(customId) {
     if (customId.includes(':')) {
         const parts = customId.split(':');
         
-        // For simple patterns like 'settings:warn-config', the whole string is the baseId
-        if (parts.length <= 2) {
-            // Check if the second part contains a dash (indicating parameters)
-            if (parts.length === 2 && parts[1].includes('-')) {
-                // Split the second part by dash
-                const [secondPart, ...dashArgs] = parts[1].split('-');
-                const baseId = `${parts[0]}:${secondPart}`;
-                return { baseId, args: dashArgs };
+        // For simple patterns like 'settings:warn-config', treat the whole
+        // string as the base ID unless the last segment after '-' is numeric
+        // (e.g. 'settings:warn-edit-rule-123')
+        if (parts.length === 2) {
+            const subparts = parts[1].split('-');
+            const last = subparts[subparts.length - 1];
+
+            if (subparts.length > 1 && !isNaN(Number(last))) {
+                const baseId = `${parts[0]}:${subparts.slice(0, -1).join('-')}`;
+                return { baseId, args: [last] };
             }
             return { baseId: customId, args: [] };
         }
