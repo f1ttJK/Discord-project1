@@ -26,6 +26,17 @@ module.exports = {
           flags: MessageFlags.Ephemeral
         });
       }
+    } else if (args[0] === 'create' && args[1] === 'rule') {
+      // Handle create rule action: settings:warn-create-rule
+      const createRuleHandler = client.components.get('settings:warn-create-rule');
+      if (createRuleHandler) {
+        await createRuleHandler.execute(interaction, [], client);
+      } else {
+        await interaction.reply({
+          content: '❌ Ошибка: не удалось найти обработчик создания правила.',
+          flags: MessageFlags.Ephemeral
+        });
+      }
     } else if (args[0] === 'edit' && args[1] === 'rule' && args[2]) {
       // Handle edit rule action: settings:warn-edit-rule-{id}
       const reasonId = args[2];
