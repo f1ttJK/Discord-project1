@@ -15,8 +15,12 @@ module.exports = {
     const guildId = interaction.guildId;
     
     // Parse page number from args (format: settings:warn-config:page:2)
-    const pageArg = args.find(arg => arg?.startsWith('page:'));
-    const requestedPage = pageArg ? parseInt(pageArg.split(':')[1]) : 1;
+    let requestedPage = 1;
+    const pageIndex = args.indexOf('page');
+    if (pageIndex !== -1) {
+      const parsed = parseInt(args[pageIndex + 1]);
+      if (!isNaN(parsed)) requestedPage = parsed;
+    }
     
     // Get warn reasons from database
     const warnReasons = await client.prisma.warnReason.findMany({
