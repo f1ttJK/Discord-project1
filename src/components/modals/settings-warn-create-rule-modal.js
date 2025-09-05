@@ -18,6 +18,13 @@ module.exports = {
     }
 
     try {
+      // ensure guild exists for foreign key constraint
+      await client.prisma.guild.upsert({
+        where: { id: guildId },
+        update: {},
+        create: { id: guildId }
+      });
+
       await client.prisma.warnReason.create({
         data: { guildId, label }
       });
@@ -38,7 +45,8 @@ module.exports = {
         guildId,
         update: (data) => message.edit(data)
       };
-      await client.components.get('settings:warn-config').execute(fakeInteraction, [`page:${totalPages}`], client);
+      await client.components.get('settings:warn-config').execute(fakeInteraction, ['page', totalPages.toString()], client);
+
     } catch (err) {
       // ignore message update errors
     }
