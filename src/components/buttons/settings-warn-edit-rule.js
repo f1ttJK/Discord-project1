@@ -10,11 +10,11 @@ const {
 
 module.exports = {
   customId: 'settings:warn-edit-rule',
-  
+
   async execute(interaction, args, client) {
     // The args should contain the reason ID from the parsed customId
     // Format: settings:warn-edit-rule-{reasonId}
-    const reasonId = args[0]; // This should be the reason ID
+    const reasonId = args?.[0] ?? interaction.customId.split('-')[3];
     
     if (!reasonId) {
       return interaction.reply({
@@ -43,13 +43,12 @@ module.exports = {
     // Build the warn rule edit container
     const warnEditContainer = new ContainerBuilder()
       .addActionRowComponents(
-        new ActionRowBuilder()
-          .addComponents(
-            new ButtonBuilder()
-              .setStyle(ButtonStyle.Secondary)
-              .setLabel("Назад")
-              .setCustomId("settings:warn-config"),
-          ),
+        new ActionRowBuilder().addComponents(
+          new ButtonBuilder()
+            .setStyle(ButtonStyle.Secondary)
+            .setLabel("← Назад")
+            .setCustomId("settings:warn-config"),
+        ),
       )
       .addSectionComponents(
         new SectionBuilder()

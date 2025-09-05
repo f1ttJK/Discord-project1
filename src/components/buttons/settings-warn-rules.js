@@ -59,40 +59,11 @@ module.exports = {
           ),
       );
 
-    // If no rules exist, show placeholder text and examples
+    // If no rules exist, show placeholder text
     if (totalItems === 0) {
-      warnRulesContainer
-        .addTextDisplayComponents(
-          new TextDisplayBuilder().setContent("Правил нет. \n( или если есть правила то отображает пример ниже с кнопкой )"),
-        )
-        .addSectionComponents(
-          new SectionBuilder()
-            .setButtonAccessory(
-              new ButtonBuilder()
-                .setStyle(ButtonStyle.Secondary)
-                .setLabel("⚙️")
-                .setCustomId("settings:warn-edit-rule-example1")
-            )
-            .addTextDisplayComponents(
-              new TextDisplayBuilder().setContent(
-                "`🟢` | Название правила\nТип наказания: ( None / Mute / Timeout )\nУровень наказания: "
-              ),
-            ),
-        )
-        .addSectionComponents(
-          new SectionBuilder()
-            .setButtonAccessory(
-              new ButtonBuilder()
-                .setStyle(ButtonStyle.Secondary)
-                .setLabel("⚙️")
-                .setCustomId("settings:warn-edit-rule-example2")
-            )
-            .addTextDisplayComponents(
-              new TextDisplayBuilder().setContent(
-                "`🔴` | Название правила\nТип наказания: ( None / Mute / Timeout )\nУровень наказания: "
-              ),
-            ),
-        );
+      warnRulesContainer.addTextDisplayComponents(
+        new TextDisplayBuilder().setContent("Правил нет. Создайте правило, чтобы начать."),
+      );
     } else {
       // Show existing rules for current page
       pageItems.forEach(reason => {
