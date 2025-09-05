@@ -28,8 +28,18 @@ module.exports = {
         data: { guildId, label }
       });
     } catch (error) {
+      if (error?.code === 'P2002') {
+        // Unique constraint failed (duplicate label within guild)
+        return interaction.reply({
+          content: '❌ Не удалось создать правило. Такое название уже существует.',
+          flags: MessageFlags.Ephemeral
+        });
+      }
+
+      // Log unexpected errors for easier debugging
+      console.error('Failed to create warn reason:', error);
       return interaction.reply({
-        content: '❌ Не удалось создать правило. Возможно, такое название уже существует.',
+        content: '❌ Произошла внутренняя ошибка при создании правила.',
         flags: MessageFlags.Ephemeral
       });
     }
