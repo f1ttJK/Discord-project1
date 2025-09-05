@@ -6,7 +6,6 @@ module.exports = {
   customId: 'settings:warn-create-rule-modal',
 
   async execute(interaction, args, client) {
-    const messageId = args[0];
     const label = interaction.fields.getTextInputValue('label').trim();
     const guildId = interaction.guildId;
 
@@ -40,13 +39,17 @@ module.exports = {
     const totalPages = Math.max(1, Math.ceil(totalItems / ITEMS_PER_PAGE));
 
     try {
-      const message = await interaction.channel.messages.fetch(messageId);
-      const fakeInteraction = {
-        guildId,
-        update: (data) => message.edit(data)
-      };
-      await client.components.get('settings:warn-config').execute(fakeInteraction, ['page', totalPages.toString()], client);
-
+      let targetMessage = interaction.message;
+      if (!targetMessage && args[0]) {
+        targetMessage = await interaction.channel?.messages.fetch(args[0]).catch(() => null);
+      }
+      if (targetMessage) {
+        const fakeInteraction = {
+          guildId,
+          update: (data) => targetMessage.edit(data)
+        };
+        await client.components.get('settings:warn-config').execute(fakeInteraction, ['page', totalPages.toString()], client);
+      }
     } catch (err) {
       // ignore message update errors
     }
