@@ -58,7 +58,7 @@ module.exports = {
     }
 
     // Handle timeout: show preset buttons
-    if (warnReason.punishmentType === 'TimeOut') {
+    if (warnReason.punishmentType === 'Timeout') {
       const durationContainer = new ContainerBuilder()
         .addActionRowComponents(
           new ActionRowBuilder().addComponents(
