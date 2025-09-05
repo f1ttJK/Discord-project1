@@ -46,6 +46,7 @@ module.exports = {
         update: (data) => message.edit(data)
       };
       await client.components.get('settings:warn-config').execute(fakeInteraction, ['page', totalPages.toString()], client);
+
     } catch (err) {
       // ignore message update errors
     }
