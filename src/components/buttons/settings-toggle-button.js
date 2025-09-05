@@ -49,7 +49,7 @@ async function buildGeneralContainers(interaction, client) {
   const warnEnabled = cfg?.enabled !== false;
   const muteEnabled = guildRow?.muteEnabled !== false;
   const logChannelId = cfg?.logChannelId ?? null;
-  const muteRoleId = guildRow?.globalMuteRoleId ?? null;
+  const muteRoleId = guildRow?.muteRoleId ?? null;
 
   const statusText = [
     `> ### General`,

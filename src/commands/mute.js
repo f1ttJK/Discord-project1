@@ -44,9 +44,9 @@ module.exports = {
     let actionText = '';
     try {
       if (reason.punishmentType === 'Mute') {
-        const roleId = reason.muteRoleId || guildRow?.globalMuteRoleId;
+        const roleId = guildRow?.muteRoleId;
         if (!roleId) {
-          return interaction.reply({ content: 'Мут-роль не настроена. Укажите её через /warnconfig setmuterole или для причины.', flags: MessageFlags.Ephemeral });
+          return interaction.reply({ content: 'Мут-роль не настроена. Укажите её через /warnconfig setmuterole.', flags: MessageFlags.Ephemeral });
         }
         const role = guild.roles.cache.get(roleId) || await guild.roles.fetch(roleId).catch(() => null);
         if (!role) return interaction.reply({ content: 'Указанная мут-роль не найдена.', flags: MessageFlags.Ephemeral });

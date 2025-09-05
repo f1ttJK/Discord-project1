@@ -23,8 +23,8 @@ module.exports = {
         if (roleId) {
           await client.prisma.guild.upsert({
             where: { id: guildId },
-            update: { globalMuteRoleId: roleId },
-            create: { id: guildId, globalMuteRoleId: roleId },
+            update: { muteRoleId: roleId },
+            create: { id: guildId, muteRoleId: roleId },
           });
         }
       }

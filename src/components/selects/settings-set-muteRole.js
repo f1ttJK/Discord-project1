@@ -25,10 +25,10 @@ module.exports = {
       // Update mute role in guild config
       await client.prisma.guild.upsert({
         where: { id: guildId },
-        update: { globalMuteRoleId: selectedRoleId },
-        create: { 
-          id: guildId, 
-          globalMuteRoleId: selectedRoleId 
+        update: { muteRoleId: selectedRoleId },
+        create: {
+          id: guildId,
+          muteRoleId: selectedRoleId
         }
       });
 

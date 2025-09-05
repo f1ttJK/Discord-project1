@@ -13,7 +13,6 @@ model MuteReason {
   // How to apply mute
   punishmentType        PunishmentType @default(Timeout) // Timeout or Mute (role)
   punishmentDurationMin Int?
-  muteRoleId            String?
 
   guild Guild @relation(fields: [guildId], references: [id])
 
@@ -40,7 +39,7 @@ model Guild {
   warnConfig WarnConfig?
   warnReasons WarnReason[]
   muteReasons MuteReason[]
-  globalMuteRoleId String?
+  muteRoleId String?
   // Feature toggles
   muteEnabled Boolean @default(true)
 }
@@ -156,7 +155,7 @@ model WarnReason {
   // Punishment config per reason
   punishmentType        PunishmentType @default(None)
   punishmentDurationMin Int?
-  muteRoleId            String?
+  severityLevel         Int      @default(1)
 
   guild Guild @relation(fields: [guildId], references: [id])
 
