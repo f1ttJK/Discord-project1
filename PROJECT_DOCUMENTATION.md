@@ -147,7 +147,7 @@ model WarnConfig {
 - **`/rps [bet] [choice]`**: Rock Paper Scissors with AI opponent
 
 ### Moderation Commands (2 total)
-- **`/warn [user] [days?]`**: Issue warnings with predefined reasons
+- **`/warn [user] [reason]`**: Issue warnings using predefined reasons from settings
 - **`/mute [user] [reason] [duration]`**: Timeout or role-based muting
 
 ### Utility Commands (4 total)
@@ -166,7 +166,7 @@ model WarnConfig {
 
 ### Select Menu Components (2 types)
 - **Settings Parameter Select**: Choose configuration categories
-- **Warn Reason Select**: Pick from predefined warning reasons
+- **Warn Reason Autocomplete**: Choose predefined warning reasons while typing
 
 ## 🚀 Bot Initialization Flow
 
