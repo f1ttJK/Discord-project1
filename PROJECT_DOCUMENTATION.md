@@ -166,7 +166,7 @@ model WarnConfig {
 
 ### Select Menu Components (2 types)
 - **Settings Parameter Select**: Choose configuration categories
-- **Warn Reason Autocomplete**: Choose predefined warning reasons while typing
+- **Warn Reason Autocomplete**: Shows all active reasons when focused and filters as you type
 
 ## 🚀 Bot Initialization Flow
 

@@ -13,17 +13,25 @@ module.exports = {
   async autocomplete(interaction, client) {
     const guildId = interaction.guild?.id;
     if (!guildId) return interaction.respond([]);
-    const focused = interaction.options.getFocused(true).value;
+
+    // current user input for reason; may be empty when field is focused
+    const focused = interaction.options.getFocused(true);
+    const search = typeof focused?.value === 'string' ? focused.value : '';
+
+    const where = { guildId, active: true };
+    if (search) {
+      where.label = { contains: search, mode: 'insensitive' };
+    }
+
     const reasons = await client.prisma.warnReason.findMany({
-      where: {
-        guildId,
-        active: true,
-        label: { contains: focused, mode: 'insensitive' }
-      },
+      where,
       orderBy: { id: 'asc' },
       take: 25
     }).catch(() => []);
-    await interaction.respond(reasons.map(r => ({ name: r.label.slice(0, 100), value: r.label.slice(0, 100) })));
+
+    return interaction.respond(
+      reasons.map(r => ({ name: r.label.slice(0, 100), value: r.label.slice(0, 100) }))
+    );
   },
 
   async execute(interaction, client) {
