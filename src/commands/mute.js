@@ -92,6 +92,24 @@ module.exports = {
       if (ch && ch.isTextBased()) ch.send({ embeds: [embed] }).catch(() => null);
     }
 
+    if (applied) {
+      try {
+        const dmEmbed = new EmbedBuilder()
+          .setColor(0x2F3136)
+          .setTitle('Вы были замьючены')
+          .setDescription(`🔇 На сервере **${guild.name}** вам был выдан мут`)
+          .addFields(
+            { name: 'Причина', value: reason.label, inline: false },
+            { name: 'Длительность', value: `${durationMin} мин.`, inline: true },
+            { name: 'Тип', value: reason.punishmentType === 'Mute' ? 'Role Mute' : 'Timeout', inline: true }
+          )
+          .setTimestamp();
+        await targetUser.send({ embeds: [dmEmbed] });
+      } catch (e) {
+        // ignore DM errors
+      }
+    }
+
     return interaction.reply({ content: applied ? `✅ Применён мут: ${actionText}` : '❌ Не удалось применить мут.', flags: MessageFlags.Ephemeral });
   }
 };
