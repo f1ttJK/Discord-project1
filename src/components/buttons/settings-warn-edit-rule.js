@@ -98,6 +98,20 @@ module.exports = {
         new SectionBuilder()
           .setButtonAccessory(
             new ButtonBuilder()
+              .setStyle(ButtonStyle.Secondary)
+              .setLabel("📅")
+              .setCustomId(`settings:warn-edit-expiry-${reasonId}`)
+          )
+          .addTextDisplayComponents(
+            new TextDisplayBuilder().setContent(
+              `Срок действия: ${warnReason.expiryDays ? `${warnReason.expiryDays} д.` : 'не установлен'}`
+            ),
+          ),
+      )
+      .addSectionComponents(
+        new SectionBuilder()
+          .setButtonAccessory(
+            new ButtonBuilder()
               .setStyle(ButtonStyle.Danger)
               .setLabel("⚙️")
               .setCustomId(`settings:warn-edit-level-${reasonId}`)

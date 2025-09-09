@@ -157,6 +157,7 @@ model WarnReason {
   punishmentType        PunishmentType @default(None)
   punishmentDurationMin Int?
   severityLevel         Int      @default(1)
+  expiryDays            Int?
 
   guild Guild @relation(fields: [guildId], references: [id])
 

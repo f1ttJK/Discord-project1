@@ -87,6 +87,7 @@ module.exports = {
               new TextDisplayBuilder().setContent(
                 `\`${statusIcon}\` | ${reason.label}\n` +
                 `Тип наказания: ( ${punishmentType}${duration} )\n` +
+                `Срок: ${reason.expiryDays ? `${reason.expiryDays} д.` : '∞'}\n` +
                 `Уровень наказания: ${reason.punishmentType !== 'None' ? '⚠️' : ''}`
               ),
             ),
