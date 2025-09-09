@@ -5,7 +5,7 @@ const { EmbedBuilder, MessageFlags } = require('discord.js');
 function createHandler(client) {
     const cooldowns = new Map();
     // Adjusted path for src directory
-    const config = require('../../config.json');
+    const config = require('../config/config.json');
 
     const validationChecks = {
         guildOnly: (context, command) => {

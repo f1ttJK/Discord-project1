@@ -17,7 +17,8 @@
 The project follows a **modular monolithic architecture** with clear separation of concerns:
 
 - **Event-Driven Design**: Uses Discord.js event system for real-time interactions
-- **Command Pattern**: Each command is encapsulated in separate modules
+- **Command Pattern**: Each command is encapsulated in its own module
+- **Feature Modules**: Domain-oriented folders in `src/modules` enable future microservice extraction
 - **Component Pattern**: UI interactions (buttons, selects) are handled modularly
 - **Singleton Pattern**: Database connection and cache instances are shared globally
 
@@ -25,14 +26,19 @@ The project follows a **modular monolithic architecture** with clear separation 
 ```
 src/
 ├── index.js                 # Entry point and bot initialization
-├── commands/               # Slash commands (17 total)
+├── config/                  # Configuration files
+├── modules/                 # Feature modules with commands
+│   ├── economy/            # Economy commands and services
+│   ├── games/              # Game commands
+│   ├── moderation/         # Moderation commands
+│   └── utility/            # Utility commands
 ├── components/             # UI interaction handlers
-│   ├── buttons/           # Button interaction handlers (6 files)
-│   └── selects/           # Select menu handlers (2 files)
-├── events/                # Discord event listeners (2 files)
-└── utils/                 # Utility modules and handlers (15+ files)
-    ├── cache/             # Caching system
-    └── other/             # Domain-specific utilities
+│   ├── buttons/            # Button interaction handlers (6 files)
+│   └── selects/            # Select menu handlers (2 files)
+├── events/                 # Discord event listeners (2 files)
+└── utils/                  # Utility modules and handlers (15+ files)
+    ├── cache/              # Caching system
+    └── other/              # Domain-specific utilities
 ```
 
 ## 🛠️ Technology Stack
@@ -154,7 +160,7 @@ model WarnConfig {
 - **`/profile [user?]`**: Generate visual profile cards with stats
 - **`/activity [user?]`**: Display user activity and engagement metrics
 - **`/settings`**: Server configuration panel with interactive UI
-- **`/m`**: Quick moderation shortcut command
+- **`/card`**: Generate a simple profile card with avatar
 
 ## 🎯 Interactive Components
 

@@ -5,7 +5,7 @@ const { PrismaClient } = require('@prisma/client');
 let config;
 try {
     // Adjusted path for src directory
-    config = require('../../config.json');
+    config = require('../config/config.json');
 } catch (error) {
     console.error('Config file not found or invalid');
     process.exit(1);
