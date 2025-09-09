@@ -29,11 +29,13 @@ module.exports = {
           flags: MessageFlags.Ephemeral
         });
       }
-      client.logs?.error && client.logs.error(`Warn reason update error: ${error.message}`);
-      return interaction.reply({
-        content: '❌ Ошибка при обновлении правила.',
-        flags: MessageFlags.Ephemeral
-      });
+      if (error?.message !== 'Unknown Message') {
+        client.logs?.error && client.logs.error(`Warn reason update error: ${error.message}`);
+        return interaction.reply({
+          content: '❌ Ошибка при обновлении правила.',
+          flags: MessageFlags.Ephemeral
+        });
+      }
     }
 
     if (messageId) {
