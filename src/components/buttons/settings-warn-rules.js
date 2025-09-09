@@ -71,10 +71,9 @@ module.exports = {
     } else {
       // Show existing rules for current page
       pageItems.forEach(reason => {
-        const statusIcon = reason.active ? '🟢' : '🔴';
         const punishmentType = reason.punishmentType || 'None';
         const duration = reason.punishmentDurationMin ? ` (${reason.punishmentDurationMin} мин)` : '';
-        
+
         warnRulesContainer.addSectionComponents(
           new SectionBuilder()
             .setButtonAccessory(
@@ -85,10 +84,10 @@ module.exports = {
             )
             .addTextDisplayComponents(
               new TextDisplayBuilder().setContent(
-                `\`${statusIcon}\` | ${reason.label}\n` +
-                `Тип наказания: ( ${punishmentType}${duration} )\n` +
-                `Срок: ${reason.expiryDays ? `${reason.expiryDays} д.` : '∞'}\n` +
-                `Уровень наказания: ${reason.punishmentType !== 'None' ? '⚠️' : ''}`
+                `${reason.label}\n` +
+                `> Тип наказания: ${punishmentType}${duration}\n` +
+                `> Срок: ${reason.expiryDays ? `${reason.expiryDays} д.` : '∞'}\n` +
+                `> Уровень наказания: ${reason.severityLevel}`
               ),
             ),
         );
