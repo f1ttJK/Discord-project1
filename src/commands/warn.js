@@ -63,7 +63,7 @@ module.exports = {
     const kickThreshold = cfg?.kickThreshold ?? 5;
     const banThreshold = cfg?.banThreshold ?? 7;
     const muteDurationMin = cfg?.muteDurationMin ?? 60;
-    const expiryDays = cfg?.expiryDays ?? null;
+    const expiryDays = reason.expiryDays ?? cfg?.expiryDays ?? null;
 
     const expiresAt = expiryDays ? new Date(Date.now() + expiryDays * 24 * 60 * 60 * 1000) : null;
 
@@ -101,6 +101,38 @@ module.exports = {
           }
         } else {
           await member.timeout(durationMin * 60 * 1000, 'Авто-мут по количеству предупреждений');
+          actionText = `Выдан таймаут на ${durationMin} мин.`;
+        }
+      } else {
+        const durationMin = reason.punishmentDurationMin ?? muteDurationMin;
+        if (reason.punishmentType === 'Ban') {
+          await member.ban({ reason: `Наказание за ${reason.label}` });
+          actionText = 'Пользователь забанен.';
+        } else if (reason.punishmentType === 'Mute') {
+          const guildRow = await client.prisma.guild.findUnique({ where: { id: guildId } }).catch(() => null);
+          const roleId = guildRow?.muteRoleId;
+          if (roleId) {
+            const role = guild.roles.cache.get(roleId) || await guild.roles.fetch(roleId).catch(() => null);
+            const me = guild.members.me;
+            if (role && me && role.position < me.roles.highest.position) {
+              await member.roles.add(role, `Мут по причине ${reason.label}`);
+              setTimeout(async () => {
+                const fresh = await guild.members.fetch(targetUser.id).catch(() => null);
+                if (fresh && fresh.roles.cache.has(role.id)) {
+                  fresh.roles.remove(role, 'Окончание мута').catch(() => null);
+                }
+              }, durationMin * 60 * 1000);
+              actionText = `Выдан мут на ${durationMin} мин.`;
+            } else {
+              await member.timeout(durationMin * 60 * 1000, `Мут по причине ${reason.label}`);
+              actionText = `Выдан таймаут на ${durationMin} мин.`;
+            }
+          } else {
+            await member.timeout(durationMin * 60 * 1000, `Мут по причине ${reason.label}`);
+            actionText = `Выдан таймаут на ${durationMin} мин.`;
+          }
+        } else if (reason.punishmentType === 'Timeout') {
+          await member.timeout(durationMin * 60 * 1000, `Таймаут по причине ${reason.label}`);
           actionText = `Выдан таймаут на ${durationMin} мин.`;
         }
       }
