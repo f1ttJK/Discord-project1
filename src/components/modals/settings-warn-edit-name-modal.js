@@ -22,22 +22,6 @@ module.exports = {
         where: { id: parseInt(reasonId), guildId },
         data: { label, description: description || null }
       });
-
-      if (messageId) {
-        const message = await interaction.channel?.messages.fetch(messageId).catch(() => null);
-        if (message) {
-          const fakeInteraction = { guildId, update: (data) => message.edit(data) };
-          const editRule = client.components.get('settings:warn-edit-rule');
-          if (editRule) {
-            await editRule.execute(fakeInteraction, [reasonId], client);
-          }
-        }
-      }
-
-      await interaction.reply({
-        content: '✅ Правило обновлено.',
-        flags: MessageFlags.Ephemeral
-      });
     } catch (error) {
       if (error?.code === 'P2002') {
         return interaction.reply({
@@ -46,10 +30,33 @@ module.exports = {
         });
       }
       client.logs?.error && client.logs.error(`Warn reason update error: ${error.message}`);
-      await interaction.reply({
+      return interaction.reply({
         content: '❌ Ошибка при обновлении правила.',
         flags: MessageFlags.Ephemeral
       });
     }
+
+    if (messageId) {
+      try {
+        const message = await interaction.channel?.messages.fetch(messageId).catch(() => null);
+        if (message) {
+          const fakeInteraction = {
+            guildId,
+            update: (data) => message.edit(data).catch(() => null)
+          };
+          const editRule = client.components.get('settings:warn-edit-rule');
+          if (editRule) {
+            await editRule.execute(fakeInteraction, [reasonId], client);
+          }
+        }
+      } catch (err) {
+        // ignore message update errors
+      }
+    }
+
+    return interaction.reply({
+      content: '✅ Правило обновлено.',
+      flags: MessageFlags.Ephemeral
+    });
   }
 };
