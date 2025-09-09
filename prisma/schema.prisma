@@ -149,6 +149,7 @@ model WarnReason {
   id        Int      @id @default(autoincrement())
   guildId   String
   label     String   // text shown in UI
+  description String?
   active    Boolean  @default(true)
   createdAt DateTime @default(now())
 
