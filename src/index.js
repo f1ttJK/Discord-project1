@@ -10,7 +10,7 @@ const client = new Client({
 client.logs = require("./utils/Logger.js");
 client.commands = new Map();
 client.components = new Map();
-client.config = require("../config.json");
+client.config = require("./config/config.json");
 client.fetch = require('./utils/other/FetchUtils.js')(client);
 client.roleUtils = require('./utils/other/RoleUtils.js')(client);
 

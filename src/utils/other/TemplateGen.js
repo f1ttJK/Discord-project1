@@ -52,11 +52,11 @@ module.exports = {
 
 function setupTemplateGenerator(client) {
     const componentsPath = path.join(__dirname, '..', '..', 'components');
-    const commandsPath = path.join(__dirname, '..', '..', 'commands');
+    const modulesPath = path.join(__dirname, '..', '..', 'modules');
     const eventsPath = path.join(__dirname, '..', '..', 'events');
 
     const watchPaths = {
-        commands: commandsPath,
+        commands: modulesPath,
         buttons: path.join(componentsPath, 'buttons'),
         menus: path.join(componentsPath, 'menus'),
         modals: path.join(componentsPath, 'modals'),
@@ -65,13 +65,18 @@ function setupTemplateGenerator(client) {
 
     for (const [type, dir] of Object.entries(watchPaths)) {
         fs.mkdirSync(dir, { recursive: true });
-        
-        fs.watch(dir, (eventType, filename) => {
+
+        const watchOptions = type === 'commands' ? { recursive: true } : undefined;
+        fs.watch(dir, watchOptions, (eventType, filename) => {
             if (eventType === 'rename' && filename?.endsWith('.js')) {
                 const filePath = path.join(dir, filename);
-                
+
                 if (!fs.existsSync(filePath)) return;
-                
+
+                if (type === 'commands' && !filePath.includes(`${path.sep}commands${path.sep}`)) {
+                    return;
+                }
+
                 const stats = fs.statSync(filePath);
                 if (stats.size === 0) {
                     fs.writeFileSync(filePath, templates[type]);

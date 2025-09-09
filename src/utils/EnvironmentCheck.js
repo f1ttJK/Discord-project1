@@ -3,8 +3,8 @@ const path = require('node:path');
 
 module.exports = function checkEnvironment(client) {
     // Adjusted for src directory
-    const requiredFolders = ['commands', 'events', 'components'];
-    const requiredFiles = ['config.json'];
+    const requiredFolders = ['modules', 'events', 'components', 'config'];
+    const requiredFiles = ['config/config.json'];
     const requiredConfigFields = ['token', 'botID'];
     const errors = [];
 
@@ -17,8 +17,7 @@ module.exports = function checkEnvironment(client) {
     });
 
     requiredFiles.forEach(file => {
-        // Check in root directory
-        const filePath = path.join(__dirname, '..', '..', file);
+        const filePath = path.join(__dirname, '..', file);
         if (!fs.existsSync(filePath)) {
             errors.push(`Missing required file: ${file}`);
         }

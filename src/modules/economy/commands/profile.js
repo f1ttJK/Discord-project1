@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, AttachmentBuilder, MessageFlags } = require('discord.js');
-const { renderCard } = require('../utils/profileCard');
+const { renderCard } = require('../../../utils/profileCard');
 
 module.exports = {
   data: new SlashCommandBuilder()

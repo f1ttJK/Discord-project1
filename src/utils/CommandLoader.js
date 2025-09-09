@@ -6,13 +6,18 @@ module.exports = async function RegisterCommands(client) {
     const globalCommands = [];
     const guildCommands = [];
     const commandsCollection = client.commands;
-    const commandsPath = path.join(__dirname, '../commands');
-    const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
+    const modulesPath = path.join(__dirname, '../modules');
+    const moduleDirs = fs.readdirSync(modulesPath, { withFileTypes: true }).filter(d => d.isDirectory());
 
-    for (const file of commandFiles) {
-        const filePath = path.join(commandsPath, file);
-        try {
-            const command = require(filePath);
+    for (const dir of moduleDirs) {
+        const commandsDir = path.join(modulesPath, dir.name, 'commands');
+        if (!fs.existsSync(commandsDir)) continue;
+        const commandFiles = fs.readdirSync(commandsDir).filter(file => file.endsWith('.js'));
+
+        for (const file of commandFiles) {
+            const filePath = path.join(commandsDir, file);
+            try {
+                const command = require(filePath);
             
             if ('data' in command && 'execute' in command) {
                 const commandData = command.data.toJSON();
@@ -71,6 +76,7 @@ module.exports = async function RegisterCommands(client) {
             client.logs.error(`Error loading command from ${filePath}: ${error.message}`);
         }
     }
+}
 
     const rest = new REST().setToken(client.config.token);
 

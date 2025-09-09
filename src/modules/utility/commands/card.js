@@ -1,6 +1,6 @@
-// src/commands/m.js
-const { AttachmentBuilder, SlashCommandBuilder } = require('discord.js')
-const { renderCard } = require('../utils/profileCard')
+// src/modules/utility/commands/card.js
+const { AttachmentBuilder, SlashCommandBuilder } = require('discord.js');
+const { renderCard } = require('../../../utils/profileCard');
 
 module.exports = {
   data: new SlashCommandBuilder()

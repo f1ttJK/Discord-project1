@@ -3,7 +3,7 @@ const path = require('path');
 const { REST, Routes } = require('discord.js');
 
 module.exports = (client) => {
-    const baseWatchPaths = ['commands', 'events', 'components'];
+    const baseWatchPaths = ['modules', 'events', 'components'];
     const fileHashes = new Map();
     const watchers = new Map();
     let reloadLock = false;
@@ -162,7 +162,7 @@ module.exports = (client) => {
             delete require.cache[require.resolve(filePath)];
             
             switch(baseFolder) {
-                case 'commands':
+                case 'modules':
                     await loadCommand(filePath);
                     break;
                 case 'events':
