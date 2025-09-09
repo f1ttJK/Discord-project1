@@ -125,6 +125,22 @@ module.exports = {
       if (ch && ch.isTextBased()) ch.send({ embeds: [embed] }).catch(() => null);
     }
 
+    try {
+      const dmEmbed = new EmbedBuilder()
+        .setColor(0x2F3136)
+        .setTitle('Предупреждение')
+        .setDescription(`⚠️ Вы получили предупреждение на сервере **${guild.name}**`)
+        .addFields(
+          { name: 'Причина', value: reason.label, inline: false },
+          { name: 'Всего предупреждений', value: `${warnCount}`, inline: true }
+        )
+        .setTimestamp();
+      if (actionText) dmEmbed.addFields({ name: 'Действие', value: actionText, inline: true });
+      await targetUser.send({ embeds: [dmEmbed] });
+    } catch (e) {
+      // ignore DM errors
+    }
+
     return interaction.reply({ content: `✅ Предупреждение выдано. Теперь предупреждений: ${warnCount}${actionText ? `\n${actionText}` : ''}`, flags: MessageFlags.Ephemeral });
   }
 };
