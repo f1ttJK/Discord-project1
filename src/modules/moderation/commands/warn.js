@@ -169,16 +169,23 @@ module.exports = {
     }
 
     try {
+      const expiresTimestamp = expiresAt ? Math.floor(expiresAt.getTime() / 1000) : null;
+      const expiryFieldValue = expiresTimestamp
+        ? `Истекает\n> <t:${expiresTimestamp}:F>\n> <t:${expiresTimestamp}:R>`
+        : 'Не истекает';
+
       const dmEmbed = new EmbedBuilder()
         .setColor(0x2F3136)
         .setTitle('Предупреждение')
-        .setDescription(`⚠️ Вы получили предупреждение на сервере **${guild.name}**`)
+        .setDescription(`Вы получили предупреждение на сервере **${guild.name}**`)
         .addFields(
-          { name: 'Причина', value: reason.label, inline: false },
-          { name: 'Всего предупреждений', value: `${warnCount}`, inline: true }
+          { name: 'Причина', value: reason.label, inline: true },
+          { name: 'Выдал', value: `<@${moderator.id}>`, inline: true },
+          { name: 'Время истечения предупреждения', value: expiryFieldValue, inline: true }
         )
+        .setFooter({ text: guild.name })
         .setTimestamp();
-      if (actionText) dmEmbed.addFields({ name: 'Действие', value: actionText, inline: true });
+
       await targetUser.send({ embeds: [dmEmbed] });
     } catch (e) {
       // ignore DM errors
