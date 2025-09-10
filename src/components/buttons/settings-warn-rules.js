@@ -84,7 +84,7 @@ module.exports = {
             )
             .addTextDisplayComponents(
               new TextDisplayBuilder().setContent(
-                `${reason.label}\n` +
+                `- ${reason.label}\n` +
                 `> Тип наказания: ${punishmentType}${duration}\n` +
                 `> Срок: ${reason.expiryDays ? `${reason.expiryDays} д.` : '∞'}\n` +
                 `> Уровень наказания: ${reason.severityLevel}`

@@ -99,7 +99,7 @@ module.exports = {
           .setButtonAccessory(
             new ButtonBuilder()
               .setStyle(ButtonStyle.Secondary)
-              .setLabel("📅")
+              .setLabel("⚙️")
               .setCustomId(`settings:warn-edit-expiry-${reasonId}`)
           )
           .addTextDisplayComponents(
