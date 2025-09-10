@@ -154,7 +154,11 @@ module.exports = {
     const logChannelId = cfg?.logChannelId;
     if (logChannelId) {
       const fields = [
-        { name: 'Причина', value: reason.label, inline: false },
+        {
+          name: 'Причина',
+          value: reason.description ? `${reason.label}\n> ${reason.description}` : reason.label,
+          inline: false
+        },
         { name: 'Всего предупреждений', value: `${warnCount}`, inline: true }
       ];
       if (actionText) fields.push({ name: 'Действие', value: actionText, inline: true });
@@ -171,21 +175,25 @@ module.exports = {
     try {
       const expiresTimestamp = expiresAt ? Math.floor(expiresAt.getTime() / 1000) : null;
       const expiryFieldValue = expiresTimestamp
-        ? `Истекает\n> <t:${expiresTimestamp}:F>\n> <t:${expiresTimestamp}:R>`
-        : 'Не истекает';
+        ? `Закінчується\n> <t:${expiresTimestamp}:F>\n> <t:${expiresTimestamp}:R>`
+        : 'Не закінчується';
 
       const dmEmbed = new EmbedBuilder()
         .setColor(0x2F3136)
-        .setTitle('Предупреждение')
-        .setDescription(`Вы получили предупреждение на сервере **${guild.name}**`)
+        .setTitle('Попередження')
+        .setDescription(`Ви отримали попередження на сервері **${guild.name}**`)
         .addFields(
-          { name: 'Причина', value: reason.label, inline: false },
           {
-            name: 'Выдал',
+            name: 'Причина',
+            value: reason.description ? `${reason.label}\n> ${reason.description}` : reason.label,
+            inline: false
+          },
+          {
+            name: 'Видав',
             value: `<@${moderator.id}>\n> ${moderator.user.tag}\n> ${moderator.id}`,
             inline: true
           },
-          { name: 'Время истечения предупреждения', value: expiryFieldValue, inline: true }
+          { name: 'Час закінчення попередження', value: expiryFieldValue, inline: true }
         )
         .setFooter({ text: guild.name })
         .setTimestamp();
