@@ -154,7 +154,11 @@ module.exports = {
     const logChannelId = cfg?.logChannelId;
     if (logChannelId) {
       const fields = [
-        { name: 'Причина', value: reason.label, inline: false },
+        {
+          name: 'Причина',
+          value: reason.description ? `${reason.label}\n> ${reason.description}` : reason.label,
+          inline: false
+        },
         { name: 'Всего предупреждений', value: `${warnCount}`, inline: true }
       ];
       if (actionText) fields.push({ name: 'Действие', value: actionText, inline: true });
@@ -179,7 +183,11 @@ module.exports = {
         .setTitle('Предупреждение')
         .setDescription(`Вы получили предупреждение на сервере **${guild.name}**`)
         .addFields(
-          { name: 'Причина', value: reason.label, inline: false },
+          {
+            name: 'Причина',
+            value: reason.description ? `${reason.label}\n> ${reason.description}` : reason.label,
+            inline: false
+          },
           {
             name: 'Выдал',
             value: `<@${moderator.id}>\n> ${moderator.user.tag}\n> ${moderator.id}`,
