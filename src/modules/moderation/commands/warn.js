@@ -180,7 +180,11 @@ module.exports = {
         .setDescription(`Вы получили предупреждение на сервере **${guild.name}**`)
         .addFields(
           { name: 'Причина', value: reason.label, inline: true },
-          { name: 'Выдал', value: `<@${moderator.id}>`, inline: true },
+          {
+            name: 'Выдал',
+            value: `<@${moderator.id}>\n> ${moderator.user.tag}\n> ${moderator.id}`,
+            inline: true
+          },
           { name: 'Время истечения предупреждения', value: expiryFieldValue, inline: true }
         )
         .setFooter({ text: guild.name })
