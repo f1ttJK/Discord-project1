@@ -179,7 +179,7 @@ module.exports = {
         .setTitle('Предупреждение')
         .setDescription(`Вы получили предупреждение на сервере **${guild.name}**`)
         .addFields(
-          { name: 'Причина', value: reason.label, inline: true },
+          { name: 'Причина', value: reason.label, inline: false },
           {
             name: 'Выдал',
             value: `<@${moderator.id}>\n> ${moderator.user.tag}\n> ${moderator.id}`,
