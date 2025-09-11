@@ -6,8 +6,7 @@ const {
   StringSelectMenuOptionBuilder,
   ContainerBuilder,
   SectionBuilder,
-  TextDisplayBuilder,
-  WebhookClient
+  TextDisplayBuilder
 } = require('discord.js');
 
 module.exports = {
@@ -20,16 +19,8 @@ module.exports = {
         flags: MessageFlags.Ephemeral
       });
     }
-    
+
     const [messageId] = args;
-    const tokenKey = `settings:punishment-token:${messageId}`;
-    const token = client.ExpiryMap.get(tokenKey);
-    if (!token) {
-      return interaction.reply({
-        content: '❌ Не удалось обработать взаимодействие. Попробуйте снова.',
-        flags: MessageFlags.Ephemeral
-      });
-    }
 
     const warnCountStr = interaction.fields.getTextInputValue('warn-count').trim();
     const warnCount = parseInt(warnCountStr, 10);
@@ -60,16 +51,11 @@ module.exports = {
       );
 
     try {
-      const webhook = new WebhookClient({ id: interaction.applicationId, token });
-      const editOptions = {
+      const targetMessage = await interaction.channel?.messages.fetch(messageId);
+      await targetMessage.edit({
         components: [container],
         flags: MessageFlags.IsComponentsV2
-      };
-      if (interaction.channel?.isThread?.()) {
-        editOptions.threadId = interaction.channel.id;
-      }
-      await webhook.editMessage(messageId, editOptions);
-      client.ExpiryMap.delete(tokenKey);
+      });
       await interaction.deleteReply().catch(() => {});
     } catch {
       await interaction.editReply({
