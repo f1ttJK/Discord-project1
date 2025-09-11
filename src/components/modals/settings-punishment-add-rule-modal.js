@@ -18,7 +18,7 @@ module.exports = {
     }
 
     const guildId = interaction.guildId;
-    const messageId = args[0];
+    const [channelId, messageId] = args;
 
     const warnCountStr = interaction.fields.getTextInputValue('warn-count').trim();
     const warnCount = parseInt(warnCountStr, 10);
@@ -38,21 +38,27 @@ module.exports = {
 
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
-    const targetMessage = await interaction.channel?.messages
-      .fetch(messageId)
-      .catch(() => null);
+    const channel = await client.channels.fetch(channelId).catch(() => null);
+    const targetMessage = await channel?.messages.fetch(messageId).catch(() => null);
 
-    if (!targetMessage) {
+    if (!channel || !targetMessage) {
       return interaction.editReply({
         content: '❌ Сообщение для редактирования не найдено.',
         components: []
       });
     }
 
-    await targetMessage.edit({
-      content: 'Выберите тип наказания:',
-      components: [new ActionRowBuilder().addComponents(typeSelect)]
-    });
+    try {
+      await targetMessage.edit({
+        content: 'Выберите тип наказания:',
+        components: [new ActionRowBuilder().addComponents(typeSelect)]
+      });
+    } catch {
+      return interaction.editReply({
+        content: '❌ Не удалось обновить сообщение.',
+        components: []
+      });
+    }
 
     await interaction.deleteReply().catch(() => {});
   }
