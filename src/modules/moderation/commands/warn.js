@@ -72,9 +72,59 @@ module.exports = {
 
     const warnCount = await client.prisma.warn.count({ where: { guildId, userId: targetUser.id } });
 
+    const rules = await client.prisma.warnPunishmentRule.findMany({
+      where: { guildId },
+      orderBy: { warnCount: 'asc' }
+    }).catch(() => []);
+
+    const matchedRule = rules
+      .filter(r => warnCount >= r.warnCount)
+      .sort((a, b) => b.warnCount - a.warnCount)[0];
+
     let actionText = '';
     try {
-      if (warnCount >= banThreshold) {
+      if (matchedRule) {
+        const type = matchedRule.punishmentType.toLowerCase();
+        const durationMin = Number(matchedRule.punishmentDurationMin ?? muteDurationMin);
+        const durationMs = durationMin * 60 * 1000;
+        if (type === 'ban') {
+          await member.ban({ reason: 'Превышен лимит предупреждений' });
+          actionText = 'Пользователь забанен.';
+        } else if (type === 'kick') {
+          await member.kick('Превышен лимит предупреждений');
+          actionText = 'Пользователь кикнут.';
+        } else if (type === 'mute') {
+          const guildRow = await client.prisma.guild.findUnique({ where: { id: guildId } }).catch(() => null);
+          const roleId = guildRow?.muteRoleId;
+          if (roleId) {
+            const role = guild.roles.cache.get(roleId) || await guild.roles.fetch(roleId).catch(() => null);
+            const me = guild.members.me;
+            if (role && me && role.position < me.roles.highest.position) {
+              await member.roles.add(role, `Авто-мут на ${durationMin} мин.`);
+              setTimeout(async () => {
+                const fresh = await guild.members.fetch(targetUser.id).catch(() => null);
+                if (fresh && fresh.roles.cache.has(role.id)) {
+                  fresh.roles.remove(role, 'Окончание мута').catch(() => null);
+                }
+              }, durationMs);
+              actionText = `Выдан мут на ${durationMin} мин.`;
+            } else {
+              await member.timeout(durationMs, 'Авто-мут по количеству предупреждений');
+              actionText = `Выдан таймаут на ${durationMin} мин.`;
+            }
+          } else {
+            await member.timeout(durationMs, 'Авто-мут по количеству предупреждений');
+            actionText = `Выдан таймаут на ${durationMin} мин.`;
+          }
+        } else if (type === 'timeout') {
+          if (Number.isFinite(durationMs) && durationMs > 0) {
+            await member.timeout(durationMs, 'Авто-таймаут по количеству предупреждений');
+            actionText = `Выдан таймаут на ${durationMin} мин.`;
+          } else {
+            client.logs?.warn && client.logs.warn(`Invalid timeout duration in warn rule: ${durationMin}`);
+          }
+        }
+      } else if (warnCount >= banThreshold) {
         await member.ban({ reason: 'Превышен лимит предупреждений' });
         actionText = 'Пользователь забанен.';
       } else if (warnCount >= kickThreshold) {
@@ -115,6 +165,9 @@ module.exports = {
         if (punishmentType === 'ban') {
           await member.ban({ reason: `Наказание за ${reason.label}` });
           actionText = 'Пользователь забанен.';
+        } else if (punishmentType === 'kick') {
+          await member.kick(`Наказание за ${reason.label}`);
+          actionText = 'Пользователь кикнут.';
         } else if (punishmentType === 'mute') {
           const guildRow = await client.prisma.guild.findUnique({ where: { id: guildId } }).catch(() => null);
           const roleId = guildRow?.muteRoleId;

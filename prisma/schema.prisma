@@ -145,6 +145,20 @@ model WarnConfig {
   guild Guild @relation(fields: [guildId], references: [id])
 }
 
+// Escalating punishment rules based on total warns
+model WarnPunishmentRule {
+  id                   Int             @id @default(autoincrement())
+  guildId              String
+  warnCount            Int              // number of warns required to trigger the rule
+  punishmentType       PunishmentType
+  punishmentDurationMin Int?
+
+  guild Guild @relation(fields: [guildId], references: [id])
+
+  @@index([guildId])
+  @@unique([guildId, warnCount])
+}
+
 model WarnReason {
   id        Int      @id @default(autoincrement())
   guildId   String
@@ -170,5 +184,6 @@ enum PunishmentType {
   None
   Timeout
   Mute
+  Kick
   Ban
 }
