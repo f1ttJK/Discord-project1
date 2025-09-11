@@ -3,7 +3,10 @@ const {
   PermissionFlagsBits,
   ActionRowBuilder,
   StringSelectMenuBuilder,
-  StringSelectMenuOptionBuilder
+  StringSelectMenuOptionBuilder,
+  ContainerBuilder,
+  SectionBuilder,
+  TextDisplayBuilder
 } = require('discord.js');
 
 module.exports = {
@@ -42,9 +45,19 @@ module.exports = {
           new StringSelectMenuOptionBuilder().setLabel('1 неделя').setValue('10080')
         );
 
+      const container = new ContainerBuilder()
+        .addSectionComponents(
+          new SectionBuilder().addTextDisplayComponents(
+            new TextDisplayBuilder().setContent(`Тип наказания: **${selectedType}**\nВыберите длительность:`)
+          )
+        )
+        .addActionRowComponents(
+          new ActionRowBuilder().addComponents(durationSelect)
+        );
+
       return interaction.update({
-        content: `Тип наказания: **${selectedType}**\nВыберите длительность:`,
-        components: [new ActionRowBuilder().addComponents(durationSelect)]
+        components: [container],
+        flags: MessageFlags.IsComponentsV2
       });
     }
 
@@ -65,9 +78,19 @@ module.exports = {
       });
     } catch (err) {
       if (err?.code === 'P2002') {
-        return interaction.update({ content: '❌ Правило с таким количеством предупреждений уже существует.', components: [] });
+        const container = new ContainerBuilder().addSectionComponents(
+          new SectionBuilder().addTextDisplayComponents(
+            new TextDisplayBuilder().setContent('❌ Правило с таким количеством предупреждений уже существует.')
+          )
+        );
+        return interaction.update({ components: [container], flags: MessageFlags.IsComponentsV2 });
       }
-      return interaction.update({ content: '❌ Ошибка при сохранении правила.', components: [] });
+      const container = new ContainerBuilder().addSectionComponents(
+        new SectionBuilder().addTextDisplayComponents(
+          new TextDisplayBuilder().setContent('❌ Ошибка при сохранении правила.')
+        )
+      );
+      return interaction.update({ components: [container], flags: MessageFlags.IsComponentsV2 });
     }
 
     try {
@@ -86,6 +109,12 @@ module.exports = {
       // ignore
     }
 
-    return interaction.update({ content: `✅ Правило добавлено: **${selectedType}**`, components: [] });
+    const successContainer = new ContainerBuilder().addSectionComponents(
+      new SectionBuilder().addTextDisplayComponents(
+        new TextDisplayBuilder().setContent(`✅ Правило добавлено: **${selectedType}**`)
+      )
+    );
+
+    return interaction.update({ components: [successContainer], flags: MessageFlags.IsComponentsV2 });
   }
 };

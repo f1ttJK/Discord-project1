@@ -3,7 +3,10 @@ const {
   PermissionFlagsBits,
   ActionRowBuilder,
   StringSelectMenuBuilder,
-  StringSelectMenuOptionBuilder
+  StringSelectMenuOptionBuilder,
+  ContainerBuilder,
+  SectionBuilder,
+  TextDisplayBuilder
 } = require('discord.js');
 
 module.exports = {
@@ -48,10 +51,20 @@ module.exports = {
       });
     }
 
+    const container = new ContainerBuilder()
+      .addSectionComponents(
+        new SectionBuilder().addTextDisplayComponents(
+          new TextDisplayBuilder().setContent('Выберите тип наказания:')
+        )
+      )
+      .addActionRowComponents(
+        new ActionRowBuilder().addComponents(typeSelect)
+      );
+
     try {
       await targetMessage.edit({
-        content: 'Выберите тип наказания:',
-        components: [new ActionRowBuilder().addComponents(typeSelect)]
+        components: [container],
+        flags: MessageFlags.IsComponentsV2
       });
     } catch {
       return interaction.editReply({

@@ -1,6 +1,9 @@
 const {
   MessageFlags,
-  PermissionFlagsBits
+  PermissionFlagsBits,
+  ContainerBuilder,
+  SectionBuilder,
+  TextDisplayBuilder
 } = require('discord.js');
 
 module.exports = {
@@ -45,9 +48,19 @@ module.exports = {
       });
     } catch (err) {
       if (err?.code === 'P2002') {
-        return interaction.update({ content: '❌ Правило с таким количеством предупреждений уже существует.', components: [] });
+        const container = new ContainerBuilder().addSectionComponents(
+          new SectionBuilder().addTextDisplayComponents(
+            new TextDisplayBuilder().setContent('❌ Правило с таким количеством предупреждений уже существует.')
+          )
+        );
+        return interaction.update({ components: [container], flags: MessageFlags.IsComponentsV2 });
       }
-      return interaction.update({ content: '❌ Ошибка при сохранении правила.', components: [] });
+      const container = new ContainerBuilder().addSectionComponents(
+        new SectionBuilder().addTextDisplayComponents(
+          new TextDisplayBuilder().setContent('❌ Ошибка при сохранении правила.')
+        )
+      );
+      return interaction.update({ components: [container], flags: MessageFlags.IsComponentsV2 });
     }
 
     try {
@@ -66,6 +79,12 @@ module.exports = {
       // ignore
     }
 
-    return interaction.update({ content: `✅ Правило добавлено: **${type} (${duration} мин.)**`, components: [] });
+    const successContainer = new ContainerBuilder().addSectionComponents(
+      new SectionBuilder().addTextDisplayComponents(
+        new TextDisplayBuilder().setContent(`✅ Правило добавлено: **${type} (${duration} мин.)**`)
+      )
+    );
+
+    return interaction.update({ components: [successContainer], flags: MessageFlags.IsComponentsV2 });
   }
 };
