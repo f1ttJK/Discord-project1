@@ -6,7 +6,8 @@ const {
   StringSelectMenuOptionBuilder,
   ContainerBuilder,
   SectionBuilder,
-  TextDisplayBuilder
+  TextDisplayBuilder,
+  WebhookClientn
 } = require('discord.js');
 
 module.exports = {
@@ -21,7 +22,7 @@ module.exports = {
     }
 
     const guildId = interaction.guildId;
-    const [channelId, messageId] = args;
+    const [messageId, token] = args;
 
     const warnCountStr = interaction.fields.getTextInputValue('warn-count').trim();
     const warnCount = parseInt(warnCountStr, 10);
@@ -41,16 +42,6 @@ module.exports = {
 
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
-    const channel = await client.channels.fetch(channelId).catch(() => null);
-    const targetMessage = await channel?.messages.fetch(messageId).catch(() => null);
-
-    if (!channel || !targetMessage) {
-      return interaction.editReply({
-        content: '❌ Сообщение для редактирования не найдено.',
-        components: []
-      });
-    }
-
     const container = new ContainerBuilder()
       .addSectionComponents(
         new SectionBuilder().addTextDisplayComponents(
@@ -62,15 +53,17 @@ module.exports = {
       );
 
     try {
-      await targetMessage.edit({
+      const webhook = new WebhookClient({ id: client.application.id, token });
+      await webhook.editMessage(messageId, {
         components: [container],
         flags: MessageFlags.IsComponentsV2
       });
     } catch {
-      return interaction.editReply({
+      await interaction.editReply({
         content: '❌ Не удалось обновить сообщение.',
         components: []
       });
+      return;
     }
 
     await interaction.deleteReply().catch(() => {});

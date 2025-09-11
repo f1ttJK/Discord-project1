@@ -10,7 +10,7 @@ module.exports = {
 
   async execute(interaction) {
     const modal = new ModalBuilder()
-      .setCustomId(`settings:punishment-add-rule-modal:${interaction.channelId}:${interaction.message.id}`)
+      .setCustomId(`settings:punishment-add-rule-modal:${interaction.message.id}:${interaction.token}`)
       .setTitle('Новое наказание');
 
     const warnCountInput = new TextInputBuilder()
