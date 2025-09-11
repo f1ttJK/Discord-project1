@@ -7,7 +7,7 @@ const {
   ContainerBuilder,
   SectionBuilder,
   TextDisplayBuilder,
-  WebhookClientn
+  WebhookClient
 } = require('discord.js');
 
 module.exports = {
@@ -21,8 +21,15 @@ module.exports = {
       });
     }
 
-    const guildId = interaction.guildId;
-    const [messageId, token] = args;
+    const [messageId] = args;
+    const tokenKey = `settings:punishment-token:${messageId}`;
+    const token = client.ExpiryMap.get(tokenKey);
+    if (!token) {
+      return interaction.reply({
+        content: '❌ Не удалось обработать взаимодействие. Попробуйте снова.',
+        flags: MessageFlags.Ephemeral
+      });
+    }
 
     const warnCountStr = interaction.fields.getTextInputValue('warn-count').trim();
     const warnCount = parseInt(warnCountStr, 10);
@@ -53,19 +60,22 @@ module.exports = {
       );
 
     try {
-      const webhook = new WebhookClient({ id: client.application.id, token });
-      await webhook.editMessage(messageId, {
+      const webhook = new WebhookClient({ id: interaction.applicationId, token });
+      const editOptions = {
         components: [container],
         flags: MessageFlags.IsComponentsV2
-      });
+      };
+      if (interaction.channel?.isThread?.()) {
+        editOptions.threadId = interaction.channel.id;
+      }
+      await webhook.editMessage(messageId, editOptions);
+      client.ExpiryMap.delete(tokenKey);
+      await interaction.deleteReply().catch(() => {});
     } catch {
       await interaction.editReply({
         content: '❌ Не удалось обновить сообщение.',
         components: []
       });
-      return;
     }
-
-    await interaction.deleteReply().catch(() => {});
   }
 };
