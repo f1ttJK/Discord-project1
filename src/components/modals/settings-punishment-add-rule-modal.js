@@ -6,8 +6,7 @@ const {
   StringSelectMenuOptionBuilder,
   ContainerBuilder,
   SectionBuilder,
-  TextDisplayBuilder,
-  WebhookClientn
+  TextDisplayBuilder
 } = require('discord.js');
 
 module.exports = {
@@ -21,8 +20,7 @@ module.exports = {
       });
     }
 
-    const guildId = interaction.guildId;
-    const [messageId, token] = args;
+    const [messageId] = args;
 
     const warnCountStr = interaction.fields.getTextInputValue('warn-count').trim();
     const warnCount = parseInt(warnCountStr, 10);
@@ -53,19 +51,17 @@ module.exports = {
       );
 
     try {
-      const webhook = new WebhookClient({ id: client.application.id, token });
-      await webhook.editMessage(messageId, {
+      const targetMessage = await interaction.channel?.messages.fetch(messageId);
+      await targetMessage.edit({
         components: [container],
         flags: MessageFlags.IsComponentsV2
       });
+      await interaction.deleteReply().catch(() => {});
     } catch {
       await interaction.editReply({
         content: '❌ Не удалось обновить сообщение.',
         components: []
       });
-      return;
     }
-
-    await interaction.deleteReply().catch(() => {});
   }
 };
