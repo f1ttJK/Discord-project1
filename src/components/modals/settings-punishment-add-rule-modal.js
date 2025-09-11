@@ -36,10 +36,24 @@ module.exports = {
         new StringSelectMenuOptionBuilder().setLabel('Ban').setValue('Ban')
       );
 
-    return interaction.reply({
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
+    const targetMessage = await interaction.channel?.messages
+      .fetch(messageId)
+      .catch(() => null);
+
+    if (!targetMessage) {
+      return interaction.editReply({
+        content: '❌ Сообщение для редактирования не найдено.',
+        components: []
+      });
+    }
+
+    await targetMessage.edit({
       content: 'Выберите тип наказания:',
-      components: [new ActionRowBuilder().addComponents(typeSelect)],
-      flags: MessageFlags.Ephemeral
+      components: [new ActionRowBuilder().addComponents(typeSelect)]
     });
+
+    await interaction.deleteReply().catch(() => {});
   }
 };
