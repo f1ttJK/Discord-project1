@@ -55,7 +55,8 @@ module.exports = {
       const tokenData = interaction.client.ExpiryMap.get(`punishment-add-rule:${messageId}`);
       if (tokenData) {
         const webhook = new WebhookClient({ id: tokenData.applicationId, token: tokenData.token });
-        await webhook.editMessage(messageId, {
+        await webhook.editMessage('@original', {
+          threadId: interaction.channel?.isThread() ? interaction.channel.id : undefined,
           components: [container],
           flags: MessageFlags.IsComponentsV2
         });
