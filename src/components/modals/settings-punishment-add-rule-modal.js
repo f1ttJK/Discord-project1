@@ -1,6 +1,9 @@
 const {
   MessageFlags,
-  PermissionFlagsBits
+  PermissionFlagsBits,
+  ActionRowBuilder,
+  StringSelectMenuBuilder,
+  StringSelectMenuOptionBuilder
 } = require('discord.js');
 
 module.exports = {
@@ -15,68 +18,42 @@ module.exports = {
     }
 
     const guildId = interaction.guildId;
-    const warnCountStr = interaction.fields.getTextInputValue('warn-count').trim();
-    const typeInput = interaction.fields.getTextInputValue('type').trim();
-    const durationStr = interaction.fields.getTextInputValue('duration')?.trim();
+    const messageId = args[0];
 
+    const warnCountStr = interaction.fields.getTextInputValue('warn-count').trim();
     const warnCount = parseInt(warnCountStr, 10);
     if (!Number.isFinite(warnCount) || warnCount <= 0) {
       return interaction.reply({ content: '❌ Неверное количество предупреждений.', flags: MessageFlags.Ephemeral });
     }
 
-    const type = typeInput.charAt(0).toUpperCase() + typeInput.slice(1).toLowerCase();
-    const allowed = ['Timeout', 'Kick', 'Ban', 'Mute'];
-    if (!allowed.includes(type)) {
-      return interaction.reply({ content: '❌ Неверный тип наказания.', flags: MessageFlags.Ephemeral });
-    }
+    const typeSelect = new StringSelectMenuBuilder()
+      .setCustomId(`settings:punishment-add-type:${messageId}:${warnCount}`)
+      .setPlaceholder('Выберите тип наказания')
+      .addOptions(
+        new StringSelectMenuOptionBuilder().setLabel('Timeout').setValue('Timeout'),
+        new StringSelectMenuOptionBuilder().setLabel('Mute').setValue('Mute'),
+        new StringSelectMenuOptionBuilder().setLabel('Kick').setValue('Kick'),
+        new StringSelectMenuOptionBuilder().setLabel('Ban').setValue('Ban')
+      );
 
-    let duration = null;
-    if (type === 'Timeout' || type === 'Mute') {
-      duration = parseInt(durationStr, 10);
-      if (!Number.isFinite(duration) || duration <= 0) {
-        return interaction.reply({ content: '❌ Укажите положительную длительность в минутах.', flags: MessageFlags.Ephemeral });
-      }
-    }
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
-    try {
-      await client.prisma.guild.upsert({
-        where: { id: guildId },
-        update: {},
-        create: { id: guildId }
+    const targetMessage = await interaction.channel?.messages
+      .fetch(messageId)
+      .catch(() => null);
+
+    if (!targetMessage) {
+      return interaction.editReply({
+        content: '❌ Сообщение для редактирования не найдено.',
+        components: []
       });
-
-      await client.prisma.warnPunishmentRule.create({
-        data: {
-          guildId,
-          warnCount,
-          punishmentType: type,
-          punishmentDurationMin: duration
-        }
-      });
-    } catch (err) {
-      if (err?.code === 'P2002') {
-        return interaction.reply({ content: '❌ Правило с таким количеством предупреждений уже существует.', flags: MessageFlags.Ephemeral });
-      }
-      return interaction.reply({ content: '❌ Ошибка при сохранении правила.', flags: MessageFlags.Ephemeral });
     }
 
-    const messageId = args[0];
-    try {
-      let targetMessage = interaction.message;
-      if (!targetMessage && messageId) {
-        targetMessage = await interaction.channel?.messages.fetch(messageId).catch(() => null);
-      }
-      if (targetMessage) {
-        const fakeInteraction = {
-          guildId,
-          update: (data) => targetMessage.edit(data)
-        };
-        await client.components.get('settings:punishment-config').execute(fakeInteraction, [], client);
-      }
-    } catch (e) {
-      // ignore
-    }
+    await targetMessage.edit({
+      content: 'Выберите тип наказания:',
+      components: [new ActionRowBuilder().addComponents(typeSelect)]
+    });
 
-    return interaction.reply({ content: '✅ Правило добавлено.', flags: MessageFlags.Ephemeral });
+    await interaction.deleteReply().catch(() => {});
   }
 };
