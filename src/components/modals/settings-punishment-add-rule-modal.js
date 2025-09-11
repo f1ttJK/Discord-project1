@@ -20,8 +20,7 @@ module.exports = {
         flags: MessageFlags.Ephemeral
       });
     }
-
-    const guildId = interaction.guildId;
+    
     const [messageId] = args;
     const tokenKey = `settings:punishment-token:${messageId}`;
     const token = client.ExpiryMap.get(tokenKey);
@@ -31,7 +30,6 @@ module.exports = {
         flags: MessageFlags.Ephemeral
       });
     }
-    client.ExpiryMap.delete(tokenKey);
 
     const warnCountStr = interaction.fields.getTextInputValue('warn-count').trim();
     const warnCount = parseInt(warnCountStr, 10);
@@ -62,19 +60,22 @@ module.exports = {
       );
 
     try {
-      const webhook = new WebhookClient({ id: client.application.id, token });
-      await webhook.editMessage(messageId, {
+      const webhook = new WebhookClient({ id: interaction.applicationId, token });
+      const editOptions = {
         components: [container],
         flags: MessageFlags.IsComponentsV2
-      });
+      };
+      if (interaction.channel?.isThread?.()) {
+        editOptions.threadId = interaction.channel.id;
+      }
+      await webhook.editMessage(messageId, editOptions);
+      client.ExpiryMap.delete(tokenKey);
+      await interaction.deleteReply().catch(() => {});
     } catch {
       await interaction.editReply({
         content: '❌ Не удалось обновить сообщение.',
         components: []
       });
-      return;
     }
-
-    await interaction.deleteReply().catch(() => {});
   }
 };
