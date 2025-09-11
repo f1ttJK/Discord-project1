@@ -21,10 +21,11 @@ module.exports = {
     }
 
     const guildId = interaction.guildId;
-    const rules = await client.prisma.warnPunishmentRule.findMany({
-      where: { guildId },
-      orderBy: { warnCount: 'asc' }
-    }).catch(() => []);
+    const rules = client.prisma?.warnPunishmentRule
+      ? await client.prisma.warnPunishmentRule
+          .findMany({ where: { guildId }, orderBy: { warnCount: 'asc' } })
+          .catch(() => [])
+      : [];
 
     const container = new ContainerBuilder();
 
