@@ -224,7 +224,7 @@ await require('./HotReload')(client)
 - **Predefined Reasons**: Server-configurable warning templates
 - **Automatic Actions**: Escalating punishments based on warning count
 - **Expiration**: Auto-cleanup of expired warnings
-- **Thresholds**: Configurable mute/kick/ban limits
+- **Rules**: Admin-defined list mapping warn counts to punishments
 
 ### Punishment Types
 ```typescript
@@ -232,14 +232,13 @@ enum PunishmentType {
   None    // Warning only
   Timeout // Discord timeout feature
   Mute    // Role-based muting
+  Kick    // Kick member from server
   Ban     // Server ban
 }
 ```
 
 ### Configuration Options
-- Mute threshold (default: 3 warnings)
-- Kick threshold (default: 5 warnings)  
-- Ban threshold (default: 7 warnings)
+- Custom punishment rules (warn count -> action)
 - Default mute duration (default: 60 minutes)
 - Warning expiry period (optional)
 

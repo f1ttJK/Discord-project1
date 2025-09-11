@@ -93,7 +93,17 @@ module.exports = {
                   .setLabel('🔇 Mute - Роль мута')
                   .setValue('Mute')
                   .setDescription('Выдать роль мута пользователю')
-                  .setDefault(warnReason.punishmentType === 'Mute')
+                  .setDefault(warnReason.punishmentType === 'Mute'),
+                new StringSelectMenuOptionBuilder()
+                  .setLabel('👢 Kick - Кикнуть пользователя')
+                  .setValue('Kick')
+                  .setDescription('Удалить пользователя с сервера без бана')
+                  .setDefault(warnReason.punishmentType === 'Kick'),
+                new StringSelectMenuOptionBuilder()
+                  .setLabel('⛔ Ban - Забанить пользователя')
+                  .setValue('Ban')
+                  .setDescription('Полностью забанить пользователя на сервере')
+                  .setDefault(warnReason.punishmentType === 'Ban')
               )
           )
       );

@@ -21,65 +21,36 @@ module.exports = {
     }
 
     const guildId = interaction.guildId;
-    const cfg = await client.prisma.warnConfig.findUnique({ where: { guildId } }).catch(() => null) || {};
+    const rules = await client.prisma.warnPunishmentRule.findMany({
+      where: { guildId },
+      orderBy: { warnCount: 'asc' }
+    }).catch(() => []);
 
-    const container = new ContainerBuilder()
-      .addSectionComponents(
-        new SectionBuilder()
-          .setButtonAccessory(
-            new ButtonBuilder()
-              .setStyle(ButtonStyle.Secondary)
-              .setLabel('Изменить')
-              .setCustomId('settings:punishment-edit:muteThreshold')
-          )
-          .addTextDisplayComponents(
-            new TextDisplayBuilder().setContent(`Мут после: ${cfg.muteThreshold ?? 3} предупреждений`)
-          )
-      )
-      .addSectionComponents(
-        new SectionBuilder()
-          .setButtonAccessory(
-            new ButtonBuilder()
-              .setStyle(ButtonStyle.Secondary)
-              .setLabel('Изменить')
-              .setCustomId('settings:punishment-edit:muteDurationMin')
-          )
-          .addTextDisplayComponents(
-            new TextDisplayBuilder().setContent(`Длительность мута: ${cfg.muteDurationMin ?? 60} мин.`)
-          )
-      )
-      .addSectionComponents(
-        new SectionBuilder()
-          .setButtonAccessory(
-            new ButtonBuilder()
-              .setStyle(ButtonStyle.Secondary)
-              .setLabel('Изменить')
-              .setCustomId('settings:punishment-edit:kickThreshold')
-          )
-          .addTextDisplayComponents(
-            new TextDisplayBuilder().setContent(`Кик после: ${cfg.kickThreshold ?? 5} предупреждений`)
-          )
-      )
-      .addSectionComponents(
-        new SectionBuilder()
-          .setButtonAccessory(
-            new ButtonBuilder()
-              .setStyle(ButtonStyle.Secondary)
-              .setLabel('Изменить')
-              .setCustomId('settings:punishment-edit:banThreshold')
-          )
-          .addTextDisplayComponents(
-            new TextDisplayBuilder().setContent(`Бан после: ${cfg.banThreshold ?? 7} предупреждений`)
-          )
-      )
-      .addActionRowComponents(
-        new ActionRowBuilder().addComponents(
-          new ButtonBuilder()
-            .setStyle(ButtonStyle.Secondary)
-            .setLabel('← Назад')
-            .setCustomId('settings:warn-back')
+    const container = new ContainerBuilder();
+
+    for (const rule of rules) {
+      const durationText = (rule.punishmentType === 'Timeout' || rule.punishmentType === 'Mute') && rule.punishmentDurationMin
+        ? ` (${rule.punishmentDurationMin} мин.)`
+        : '';
+      container.addSectionComponents(
+        new SectionBuilder().addTextDisplayComponents(
+          new TextDisplayBuilder().setContent(`После ${rule.warnCount} предупреждений: ${rule.punishmentType}${durationText}`)
         )
       );
+    }
+
+    container.addActionRowComponents(
+      new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setStyle(ButtonStyle.Primary)
+          .setLabel('Добавить правило')
+          .setCustomId('settings:punishment-add-rule'),
+        new ButtonBuilder()
+          .setStyle(ButtonStyle.Secondary)
+          .setLabel('← Назад')
+          .setCustomId('settings:warn-back')
+      )
+    );
 
     await interaction.update({
       components: [container],
