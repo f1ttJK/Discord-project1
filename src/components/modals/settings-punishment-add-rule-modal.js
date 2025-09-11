@@ -6,7 +6,8 @@ const {
   StringSelectMenuOptionBuilder,
   ContainerBuilder,
   SectionBuilder,
-  TextDisplayBuilder
+  TextDisplayBuilder,
+  WebhookClient
 } = require('discord.js');
 
 module.exports = {
@@ -51,11 +52,21 @@ module.exports = {
       );
 
     try {
-      const targetMessage = await interaction.channel?.messages.fetch(messageId);
-      await targetMessage.edit({
-        components: [container],
-        flags: MessageFlags.IsComponentsV2
-      });
+      const tokenData = interaction.client.ExpiryMap.get(`punishment-add-rule:${messageId}`);
+      if (tokenData) {
+        const webhook = new WebhookClient({ id: tokenData.applicationId, token: tokenData.token });
+        await webhook.editMessage(messageId, {
+          components: [container],
+          flags: MessageFlags.IsComponentsV2
+        });
+        interaction.client.ExpiryMap.delete(`punishment-add-rule:${messageId}`);
+      } else {
+        const targetMessage = await interaction.channel?.messages.fetch(messageId);
+        await targetMessage.edit({
+          components: [container],
+          flags: MessageFlags.IsComponentsV2
+        });
+      }
       await interaction.deleteReply().catch(() => {});
     } catch {
       await interaction.editReply({

@@ -9,11 +9,17 @@ module.exports = {
   customId: 'settings:punishment-add-rule',
 
   async execute(interaction) {
-    const tokenKey = `settings:punishment-token:${interaction.message.id}`;
-    interaction.client.ExpiryMap.set(tokenKey, interaction.token, 10 * 60 * 1000);
+    const messageId = interaction.message.id;
+
+    // Cache the interaction token so the modal can update the ephemeral message later
+    interaction.client.ExpiryMap.set(
+      `punishment-add-rule:${messageId}`,
+      { token: interaction.token, applicationId: interaction.applicationId },
+      900000 // 15 minutes
+    );
 
     const modal = new ModalBuilder()
-      .setCustomId(`settings:punishment-add-rule-modal:${interaction.message.id}`)
+      .setCustomId(`settings:punishment-add-rule-modal:${messageId}`)
       .setTitle('Новое наказание');
 
     const warnCountInput = new TextInputBuilder()
