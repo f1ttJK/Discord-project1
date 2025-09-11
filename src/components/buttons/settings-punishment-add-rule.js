@@ -9,8 +9,11 @@ module.exports = {
   customId: 'settings:punishment-add-rule',
 
   async execute(interaction) {
+    const tokenKey = `settings:punishment-token:${interaction.message.id}`;
+    interaction.client.ExpiryMap.set(tokenKey, interaction.token, 10 * 60 * 1000);
+
     const modal = new ModalBuilder()
-      .setCustomId(`settings:punishment-add-rule-modal:${interaction.message.id}:${interaction.token}`)
+      .setCustomId(`settings:punishment-add-rule-modal:${interaction.message.id}`)
       .setTitle('Новое наказание');
 
     const warnCountInput = new TextInputBuilder()

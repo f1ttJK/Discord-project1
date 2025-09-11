@@ -7,7 +7,7 @@ const {
   ContainerBuilder,
   SectionBuilder,
   TextDisplayBuilder,
-  WebhookClientn
+  WebhookClient
 } = require('discord.js');
 
 module.exports = {
@@ -22,7 +22,16 @@ module.exports = {
     }
 
     const guildId = interaction.guildId;
-    const [messageId, token] = args;
+    const [messageId] = args;
+    const tokenKey = `settings:punishment-token:${messageId}`;
+    const token = client.ExpiryMap.get(tokenKey);
+    if (!token) {
+      return interaction.reply({
+        content: '❌ Не удалось обработать взаимодействие. Попробуйте снова.',
+        flags: MessageFlags.Ephemeral
+      });
+    }
+    client.ExpiryMap.delete(tokenKey);
 
     const warnCountStr = interaction.fields.getTextInputValue('warn-count').trim();
     const warnCount = parseInt(warnCountStr, 10);
