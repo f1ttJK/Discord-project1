@@ -10,7 +10,7 @@ module.exports = {
 
   async execute(interaction) {
     const modal = new ModalBuilder()
-      .setCustomId(`settings:punishment-add-rule-modal:${interaction.message.id}`)
+      .setCustomId(`settings:punishment-add-rule-modal:${interaction.channelId}:${interaction.message.id}`)
       .setTitle('Новое наказание');
 
     const warnCountInput = new TextInputBuilder()
@@ -19,22 +19,8 @@ module.exports = {
       .setStyle(TextInputStyle.Short)
       .setRequired(true);
 
-    const typeInput = new TextInputBuilder()
-      .setCustomId('type')
-      .setLabel('Тип (Timeout/Kick/Ban/Mute)')
-      .setStyle(TextInputStyle.Short)
-      .setRequired(true);
-
-    const durationInput = new TextInputBuilder()
-      .setCustomId('duration')
-      .setLabel('Длительность (мин, для Timeout/Mute)')
-      .setStyle(TextInputStyle.Short)
-      .setRequired(false);
-
     modal.addComponents(
-      new ActionRowBuilder().addComponents(warnCountInput),
-      new ActionRowBuilder().addComponents(typeInput),
-      new ActionRowBuilder().addComponents(durationInput)
+      new ActionRowBuilder().addComponents(warnCountInput)
     );
 
     await interaction.showModal(modal);
