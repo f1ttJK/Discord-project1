@@ -20,7 +20,7 @@ module.exports = {
         flags: MessageFlags.Ephemeral
       });
     }
-
+    
     const [messageId] = args;
     const tokenKey = `settings:punishment-token:${messageId}`;
     const token = client.ExpiryMap.get(tokenKey);
