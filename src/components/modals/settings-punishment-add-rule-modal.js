@@ -7,7 +7,7 @@ const {
   ContainerBuilder,
   SectionBuilder,
   TextDisplayBuilder,
-  WebhookClient
+  WebhookClientn
 } = require('discord.js');
 
 module.exports = {
