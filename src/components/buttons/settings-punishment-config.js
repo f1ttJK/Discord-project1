@@ -75,7 +75,6 @@ module.exports = {
         flags: MessageFlags.Ephemeral
       });
     }
-
     const components = await buildComponents(interaction.guildId, client);
 
     await interaction.update({
