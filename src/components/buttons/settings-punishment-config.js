@@ -15,44 +15,59 @@ async function buildComponents(guildId, client) {
     .catch(() => []);
 
   const container = new ContainerBuilder();
+  // Back button row
+  container.addActionRowComponents(
+    new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setStyle(ButtonStyle.Secondary)
+        .setLabel('Назад')
+        .setCustomId('settings:warn-back')
+    )
+  );
 
+  // Header
+  container.addTextDisplayComponents(
+    new TextDisplayBuilder().setContent('> ### Warn |  Наказания')
+  );
+
+  // Create punishment button
+  container.addActionRowComponents(
+    new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setStyle(ButtonStyle.Primary)
+        .setLabel('Создать наказание')
+        .setCustomId('settings:punishment-add-rule')
+    )
+  );
   if (rules.length === 0) {
     container.addTextDisplayComponents(
       new TextDisplayBuilder().setContent('Нет настроенных правил.')
     );
   } else {
     for (const rule of rules) {
-      const durationText = (rule.punishmentType === 'Timeout' || rule.punishmentType === 'Mute') && rule.punishmentDurationMin
-        ? ` (${rule.punishmentDurationMin} мин.)`
-        : '';
+      const durationText =
+        (rule.punishmentType === 'Timeout' || rule.punishmentType === 'Mute') &&
+        rule.punishmentDurationMin
+          ? ` (${rule.punishmentDurationMin} мин.)`
+          : '';
       container.addSectionComponents(
         new SectionBuilder()
           .setButtonAccessory(
             new ButtonBuilder()
               .setStyle(ButtonStyle.Danger)
-              .setLabel('Удалить')
-              .setCustomId(`settings:punishment-delete-rule:${rule.warnCount}`)
+              .setLabel('🗑')
+              .setCustomId(
+                `settings:punishment-delete-rule:${rule.warnCount}`
+              )
           )
           .addTextDisplayComponents(
-            new TextDisplayBuilder().setContent(`После ${rule.warnCount} предупреждений: ${rule.punishmentType}${durationText}`)
+            new TextDisplayBuilder().setContent(
+              `После ${rule.warnCount} предупреждений: ${rule.punishmentType}${durationText}`
+            )
           )
       );
     }
   }
-
-  container.addActionRowComponents(
-    new ActionRowBuilder().addComponents(
-      new ButtonBuilder()
-        .setStyle(ButtonStyle.Primary)
-        .setLabel('Добавить правило')
-        .setCustomId('settings:punishment-add-rule'),
-      new ButtonBuilder()
-        .setStyle(ButtonStyle.Secondary)
-        .setLabel('← Назад')
-        .setCustomId('settings:warn-back')
-    )
-  );
-
   return [container];
 }
 
