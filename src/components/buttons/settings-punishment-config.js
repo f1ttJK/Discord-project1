@@ -9,8 +9,56 @@ const {
   TextDisplayBuilder
 } = require('discord.js');
 
+async function buildComponents(guildId, client) {
+  const rules = await client.prisma.warnPunishmentRule
+    .findMany({ where: { guildId }, orderBy: { warnCount: 'asc' } })
+    .catch(() => []);
+
+  const container = new ContainerBuilder();
+
+  if (rules.length === 0) {
+    container.addTextDisplayComponents(
+      new TextDisplayBuilder().setContent('Нет настроенных правил.')
+    );
+  } else {
+    for (const rule of rules) {
+      const durationText = (rule.punishmentType === 'Timeout' || rule.punishmentType === 'Mute') && rule.punishmentDurationMin
+        ? ` (${rule.punishmentDurationMin} мин.)`
+        : '';
+      container.addSectionComponents(
+        new SectionBuilder()
+          .setButtonAccessory(
+            new ButtonBuilder()
+              .setStyle(ButtonStyle.Danger)
+              .setLabel('Удалить')
+              .setCustomId(`settings:punishment-delete-rule:${rule.warnCount}`)
+          )
+          .addTextDisplayComponents(
+            new TextDisplayBuilder().setContent(`После ${rule.warnCount} предупреждений: ${rule.punishmentType}${durationText}`)
+          )
+      );
+    }
+  }
+
+  container.addActionRowComponents(
+    new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setStyle(ButtonStyle.Primary)
+        .setLabel('Добавить правило')
+        .setCustomId('settings:punishment-add-rule'),
+      new ButtonBuilder()
+        .setStyle(ButtonStyle.Secondary)
+        .setLabel('← Назад')
+        .setCustomId('settings:warn-back')
+    )
+  );
+
+  return [container];
+}
+
 module.exports = {
   customId: 'settings:punishment-config',
+  buildComponents,
 
   async execute(interaction, _args, client) {
     if (!interaction.member?.permissions?.has(PermissionFlagsBits.ManageGuild)) {
@@ -20,7 +68,6 @@ module.exports = {
       });
     }
 
-    // Validate database connection
     if (!client?.prisma) {
       client.logs?.error?.('Database client not available in punishment config');
       return interaction.reply({
@@ -28,46 +75,10 @@ module.exports = {
         flags: MessageFlags.Ephemeral
       });
     }
+    const components = await buildComponents(interaction.guildId, client);
 
-    await interaction.deferUpdate();
-
-    const guildId = interaction.guildId;
-    const rules = await client.prisma.warnPunishmentRule
-      .findMany({ where: { guildId }, orderBy: { warnCount: 'asc' } })
-      .catch(() => []);
-
-    const container = new ContainerBuilder();
-
-    if (rules.length === 0) {
-      container.addTextDisplayComponents(
-        new TextDisplayBuilder().setContent('Нет настроенных правил.')
-      );
-    } else {
-      for (const rule of rules) {
-        const durationText = (rule.punishmentType === 'Timeout' || rule.punishmentType === 'Mute') && rule.punishmentDurationMin
-          ? ` (${rule.punishmentDurationMin} мин.)`
-          : '';
-        container.addTextDisplayComponents(
-          new TextDisplayBuilder().setContent(`После ${rule.warnCount} предупреждений: ${rule.punishmentType}${durationText}`)
-        );
-      }
-    }
-
-    container.addActionRowComponents(
-      new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-          .setStyle(ButtonStyle.Primary)
-          .setLabel('Добавить правило')
-          .setCustomId('settings:punishment-add-rule'),
-        new ButtonBuilder()
-          .setStyle(ButtonStyle.Secondary)
-          .setLabel('← Назад')
-          .setCustomId('settings:warn-back')
-      )
-    );
-
-    await interaction.editReply({
-      components: [container],
+    await interaction.update({
+      components,
       flags: MessageFlags.IsComponentsV2
     });
   }

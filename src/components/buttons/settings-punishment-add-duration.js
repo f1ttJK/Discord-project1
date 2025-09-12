@@ -23,7 +23,7 @@ module.exports = {
       });
     }
 
-    const [messageId, warnCountStr, type, durationStr] = args;
+    const [, warnCountStr, type, durationStr] = args;
     const warnCount = parseInt(warnCountStr, 10);
     const duration = parseInt(durationStr, 10);
 
@@ -64,25 +64,12 @@ module.exports = {
         flags: MessageFlags.Ephemeral
       });
     }
-
-    // Rule created successfully - update original settings message
-    try {
-      const originalMessage = interaction.message;
-      await client.components.get('settings:punishment-config')?.execute(
-        {
-          guildId,
-          update: (data) => originalMessage.edit(data).catch(() => {})
-        },
-        [],
-        client
-      );
-    } catch (e) {
-      // ignore message update errors
-    }
-
-    return interaction.reply({
-      content: `✅ Правило добавлено: **${type} (${duration} мин.)** для ${warnCount} предупреждений`,
-      flags: MessageFlags.Ephemeral
+    // Rule created successfully - show updated rules list
+    const config = client.components.get('settings:punishment-config');
+    const components = await config.buildComponents(guildId, client);
+    await interaction.update({
+      components,
+      flags: MessageFlags.IsComponentsV2
     });
   }
 };

@@ -66,21 +66,15 @@ module.exports = {
       });
     }
 
-    // Rule created successfully - update original settings message
-    try {
-      const originalMessage = await interaction.channel?.messages.fetch(messageId).catch(() => null);
-      if (originalMessage) {
-        await client.components.get('settings:punishment-config')?.execute(
-          {
-            guildId,
-            update: (data) => originalMessage.edit(data).catch(() => {})
-          },
-          [],
-          client
-        );
-      }
-    } catch (e) {
-      // ignore message update errors
+    // Rule created successfully - show updated rules list
+    const config = client.components.get('settings:punishment-config');
+    const components = await config.buildComponents(guildId, client);
+    const originalMessage = await interaction.channel?.messages.fetch(messageId).catch(() => null);
+    if (originalMessage) {
+      await originalMessage.edit({
+        components,
+        flags: MessageFlags.IsComponentsV2
+      }).catch(() => {});
     }
 
     return interaction.reply({
