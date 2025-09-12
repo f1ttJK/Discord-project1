@@ -3,7 +3,12 @@ const {
   PermissionFlagsBits,
   ActionRowBuilder,
   StringSelectMenuBuilder,
-  StringSelectMenuOptionBuilder
+  StringSelectMenuOptionBuilder,
+  ContainerBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  TextDisplayBuilder,
+  Routes
 } = require('discord.js');
 
 module.exports = {
@@ -31,13 +36,13 @@ module.exports = {
     const warnCountStr = interaction.fields.getTextInputValue('warn-count').trim();
     const warnCount = parseInt(warnCountStr, 10);
     if (!Number.isFinite(warnCount) || warnCount <= 0) {
-      return interaction.reply({ 
-        content: '❌ Неверное количество предупреждений.', 
-        flags: MessageFlags.Ephemeral 
+      return interaction.reply({
+        content: '❌ Неверное количество предупреждений.',
+        flags: MessageFlags.Ephemeral
       });
     }
 
-    // Check if rule already exists with proper error handling
+    // Check if rule already exists
     try {
       const existingRule = await client.prisma.warnPunishmentRule.findUnique({
         where: {
@@ -66,32 +71,67 @@ module.exports = {
         new StringSelectMenuOptionBuilder().setLabel('Timeout').setValue('Timeout'),
         new StringSelectMenuOptionBuilder().setLabel('Mute').setValue('Mute'),
         new StringSelectMenuOptionBuilder().setLabel('Kick').setValue('Kick'),
-        new StringSelectMenuOptionBuilder().setLabel('Ban').setValue('Ban')
+        new StringSelectMenuOptionBuilder().setLabel('Ban').setValue('Ban'),
+        new StringSelectMenuOptionBuilder().setLabel('None').setValue('None')
       );
 
-    const actionRow = new ActionRowBuilder().addComponents(typeSelect);
+    const typeRow = new ActionRowBuilder().addComponents(typeSelect);
 
-    try {
-      // Send the type selection as ephemeral reply
-      await interaction.reply({
-        content: `Количество предупреждений: **${warnCount}**\nВыберите тип наказания:`,
-        components: [actionRow],
+    const cached = interaction.client.ExpiryMap?.get(`punishment-add-rule:${messageId}`);
+    if (!cached?.originalInteraction) {
+      return interaction.reply({
+        content: '❌ Истекло время создания наказания.',
         flags: MessageFlags.Ephemeral
       });
-      
-      // Clean up cached data
-      interaction.client.ExpiryMap?.delete(`punishment-add-rule:${messageId}`);
-      
+    }
+
+    const { applicationId, token, messageId: originalMessageId } = cached.originalInteraction;
+
+    const container = new ContainerBuilder()
+      .addActionRowComponents(
+        new ActionRowBuilder().addComponents(
+          new ButtonBuilder()
+            .setStyle(ButtonStyle.Secondary)
+            .setLabel('Назад')
+            .setCustomId('settings:warn-back')
+        )
+      )
+      .addTextDisplayComponents(
+        new TextDisplayBuilder().setContent('> ### Warn |  Наказания')
+      )
+      .addActionRowComponents(
+        new ActionRowBuilder().addComponents(
+          new ButtonBuilder()
+            .setStyle(ButtonStyle.Primary)
+            .setLabel('Создать наказание')
+            .setCustomId('settings:punishment-add-rule')
+        )
+      )
+      .addActionRowComponents(typeRow);
+
+    try {
+      await client.rest.patch(
+        Routes.webhookMessage(applicationId, token, originalMessageId),
+        {
+          body: {
+            components: [container],
+            flags: MessageFlags.IsComponentsV2
+          }
+        }
+      );
+
+      await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+      await interaction.deleteReply().catch(() => {});
     } catch (error) {
       client.logs?.error?.(`Punishment add rule modal error: ${error.message}`);
-      
-      // Final fallback error response
       if (!interaction.replied) {
         await interaction.reply({
-          content: '❌ Ошибка при создании меню выбора наказания.',
+          content: '❌ Ошибка при обновлении сообщения.',
           flags: MessageFlags.Ephemeral
         }).catch(() => {});
       }
+    } finally {
+      interaction.client.ExpiryMap?.delete(`punishment-add-rule:${messageId}`);
     }
   }
 };
