@@ -64,7 +64,6 @@ module.exports = {
         flags: MessageFlags.Ephemeral
       });
     }
-
     // Rule created successfully - show updated rules list
     const config = client.components.get('settings:punishment-config');
     const components = await config.buildComponents(guildId, client);

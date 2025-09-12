@@ -15,7 +15,6 @@ async function buildComponents(guildId, client) {
     .catch(() => []);
 
   const container = new ContainerBuilder();
-
   // Back button row
   container.addActionRowComponents(
     new ActionRowBuilder().addComponents(
@@ -40,7 +39,6 @@ async function buildComponents(guildId, client) {
         .setCustomId('settings:punishment-add-rule')
     )
   );
-
   if (rules.length === 0) {
     container.addTextDisplayComponents(
       new TextDisplayBuilder().setContent('Нет настроенных правил.')
@@ -70,7 +68,6 @@ async function buildComponents(guildId, client) {
       );
     }
   }
-
   return [container];
 }
 
@@ -93,7 +90,6 @@ module.exports = {
         flags: MessageFlags.Ephemeral
       });
     }
-
     const components = await buildComponents(interaction.guildId, client);
 
     await interaction.update({
