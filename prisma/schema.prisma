@@ -38,6 +38,7 @@ model Guild {
   warns      Warn[]
   warnConfig WarnConfig?
   warnReasons WarnReason[]
+  warnPunishmentRules WarnPunishmentRule[]
   muteReasons MuteReason[]
   muteRoleId String?
   // Feature toggles

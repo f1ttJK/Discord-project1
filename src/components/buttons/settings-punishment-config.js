@@ -3,10 +3,10 @@ const {
   PermissionFlagsBits,
   ButtonStyle,
   ButtonBuilder,
+  ActionRowBuilder,
   ContainerBuilder,
   SectionBuilder,
-  TextDisplayBuilder,
-  ActionRowBuilder
+  TextDisplayBuilder
 } = require('discord.js');
 
 module.exports = {
@@ -20,24 +20,35 @@ module.exports = {
       });
     }
 
+    // Validate database connection
+    if (!client?.prisma) {
+      client.logs?.error?.('Database client not available in punishment config');
+      return interaction.reply({
+        content: '❗ Ошибка подключения к базе данных.',
+        flags: MessageFlags.Ephemeral
+      });
+    }
+
     const guildId = interaction.guildId;
-    const rules = client.prisma?.warnPunishmentRule
-      ? await client.prisma.warnPunishmentRule
-          .findMany({ where: { guildId }, orderBy: { warnCount: 'asc' } })
-          .catch(() => [])
-      : [];
+    const rules = await client.prisma.warnPunishmentRule
+      .findMany({ where: { guildId }, orderBy: { warnCount: 'asc' } })
+      .catch(() => []);
 
     const container = new ContainerBuilder();
 
-    for (const rule of rules) {
-      const durationText = (rule.punishmentType === 'Timeout' || rule.punishmentType === 'Mute') && rule.punishmentDurationMin
-        ? ` (${rule.punishmentDurationMin} мин.)`
-        : '';
-      container.addSectionComponents(
-        new SectionBuilder().addTextDisplayComponents(
-          new TextDisplayBuilder().setContent(`После ${rule.warnCount} предупреждений: ${rule.punishmentType}${durationText}`)
-        )
+    if (rules.length === 0) {
+      container.addTextDisplayComponents(
+        new TextDisplayBuilder().setContent('Нет настроенных правил.')
       );
+    } else {
+      for (const rule of rules) {
+        const durationText = (rule.punishmentType === 'Timeout' || rule.punishmentType === 'Mute') && rule.punishmentDurationMin
+          ? ` (${rule.punishmentDurationMin} мин.)`
+          : '';
+        container.addTextDisplayComponents(
+          new TextDisplayBuilder().setContent(`После ${rule.warnCount} предупреждений: ${rule.punishmentType}${durationText}`)
+        );
+      }
     }
 
     container.addActionRowComponents(

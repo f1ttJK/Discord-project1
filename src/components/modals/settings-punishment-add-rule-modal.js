@@ -3,11 +3,7 @@ const {
   PermissionFlagsBits,
   ActionRowBuilder,
   StringSelectMenuBuilder,
-  StringSelectMenuOptionBuilder,
-  ContainerBuilder,
-  SectionBuilder,
-  TextDisplayBuilder,
-  WebhookClient
+  StringSelectMenuOptionBuilder
 } = require('discord.js');
 
 module.exports = {
@@ -21,12 +17,46 @@ module.exports = {
       });
     }
 
+    // Validate database connection
+    if (!client?.prisma) {
+      client.logs?.error?.('Database client not available in punishment add rule modal');
+      return interaction.reply({
+        content: '❌ Ошибка подключения к базе данных.',
+        flags: MessageFlags.Ephemeral
+      });
+    }
+
     const [messageId] = args;
 
     const warnCountStr = interaction.fields.getTextInputValue('warn-count').trim();
     const warnCount = parseInt(warnCountStr, 10);
     if (!Number.isFinite(warnCount) || warnCount <= 0) {
-      return interaction.reply({ content: '❌ Неверное количество предупреждений.', flags: MessageFlags.Ephemeral });
+      return interaction.reply({ 
+        content: '❌ Неверное количество предупреждений.', 
+        flags: MessageFlags.Ephemeral 
+      });
+    }
+
+    // Check if rule already exists with proper error handling
+    try {
+      const existingRule = await client.prisma.warnPunishmentRule.findUnique({
+        where: {
+          guildId_warnCount: {
+            guildId: interaction.guildId,
+            warnCount: warnCount
+          }
+        }
+      });
+
+      if (existingRule) {
+        return interaction.reply({
+          content: `❌ Правило для ${warnCount} предупреждений уже существует.`,
+          flags: MessageFlags.Ephemeral
+        });
+      }
+    } catch (error) {
+      client.logs?.error?.(`Failed to check existing punishment rule: ${error.message}`);
+      // Continue without duplicate check if database query fails
     }
 
     const typeSelect = new StringSelectMenuBuilder()
@@ -39,41 +69,29 @@ module.exports = {
         new StringSelectMenuOptionBuilder().setLabel('Ban').setValue('Ban')
       );
 
-    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
-
-    const container = new ContainerBuilder()
-      .addSectionComponents(
-        new SectionBuilder().addTextDisplayComponents(
-          new TextDisplayBuilder().setContent('Выберите тип наказания:')
-        )
-      )
-      .addActionRowComponents(
-        new ActionRowBuilder().addComponents(typeSelect)
-      );
+    const actionRow = new ActionRowBuilder().addComponents(typeSelect);
 
     try {
-      const tokenData = interaction.client.ExpiryMap.get(`punishment-add-rule:${messageId}`);
-      if (tokenData) {
-        const webhook = new WebhookClient({ id: tokenData.applicationId, token: tokenData.token });
-        await webhook.editMessage('@original', {
-          threadId: interaction.channel?.isThread() ? interaction.channel.id : undefined,
-          components: [container],
-          flags: MessageFlags.IsComponentsV2
-        });
-        interaction.client.ExpiryMap.delete(`punishment-add-rule:${messageId}`);
-      } else {
-        const targetMessage = await interaction.channel?.messages.fetch(messageId);
-        await targetMessage.edit({
-          components: [container],
-          flags: MessageFlags.IsComponentsV2
-        });
-      }
-      await interaction.deleteReply().catch(() => {});
-    } catch {
-      await interaction.editReply({
-        content: '❌ Не удалось обновить сообщение.',
-        components: []
+      // Send the type selection as ephemeral reply
+      await interaction.reply({
+        content: `Количество предупреждений: **${warnCount}**\nВыберите тип наказания:`,
+        components: [actionRow],
+        flags: MessageFlags.Ephemeral
       });
+      
+      // Clean up cached data
+      interaction.client.ExpiryMap?.delete(`punishment-add-rule:${messageId}`);
+      
+    } catch (error) {
+      client.logs?.error?.(`Punishment add rule modal error: ${error.message}`);
+      
+      // Final fallback error response
+      if (!interaction.replied) {
+        await interaction.reply({
+          content: '❌ Ошибка при создании меню выбора наказания.',
+          flags: MessageFlags.Ephemeral
+        }).catch(() => {});
+      }
     }
   }
 };

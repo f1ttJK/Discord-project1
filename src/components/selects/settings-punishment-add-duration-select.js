@@ -1,9 +1,6 @@
 const {
   MessageFlags,
-  PermissionFlagsBits,
-  ContainerBuilder,
-  SectionBuilder,
-  TextDisplayBuilder
+  PermissionFlagsBits
 } = require('discord.js');
 
 module.exports = {
@@ -17,12 +14,21 @@ module.exports = {
       });
     }
 
+    // Validate database connection
+    if (!client?.prisma) {
+      client.logs?.error?.('Database client not available in punishment add duration select');
+      return interaction.reply({
+        content: '❌ Ошибка подключения к базе данных.',
+        flags: MessageFlags.Ephemeral
+      });
+    }
+
     const [messageId, warnCountStr, type] = args;
     const warnCount = parseInt(warnCountStr, 10);
     const durationStr = interaction.values?.[0];
     const duration = parseInt(durationStr, 10);
 
-    if (!messageId || !warnCount || !type || !duration) {
+    if (!warnCount || !type || !duration) {
       return interaction.reply({
         content: '❌ Ошибка: не удалось определить параметры.',
         flags: MessageFlags.Ephemeral
@@ -47,44 +53,38 @@ module.exports = {
         }
       });
     } catch (err) {
+      client.logs?.error?.(`Failed to create punishment rule with duration: ${err.message}`);
       if (err?.code === 'P2002') {
-        const container = new ContainerBuilder().addSectionComponents(
-          new SectionBuilder().addTextDisplayComponents(
-            new TextDisplayBuilder().setContent('❌ Правило с таким количеством предупреждений уже существует.')
-          )
-        );
-        return interaction.update({ components: [container], flags: MessageFlags.IsComponentsV2 });
+        return interaction.update({
+          content: '❌ Правило с таким количеством предупреждений уже существует.',
+          components: []
+        });
       }
-      const container = new ContainerBuilder().addSectionComponents(
-        new SectionBuilder().addTextDisplayComponents(
-          new TextDisplayBuilder().setContent('❌ Ошибка при сохранении правила.')
-        )
-      );
-      return interaction.update({ components: [container], flags: MessageFlags.IsComponentsV2 });
+      return interaction.update({
+        content: '❌ Ошибка при сохранении правила.',
+        components: []
+      });
     }
 
+    // Rule created successfully - update original settings message
     try {
-      let targetMessage = interaction.message;
-      if (!targetMessage && messageId) {
-        targetMessage = await interaction.channel?.messages.fetch(messageId).catch(() => null);
-      }
-      if (targetMessage) {
-        const fakeInteraction = {
-          guildId,
-          update: (data) => targetMessage.edit(data)
-        };
-        await client.components.get('settings:punishment-config').execute(fakeInteraction, [], client);
+      if (messageId && messageId !== 'direct') {
+        const originalMessage = await interaction.channel?.messages.fetch(messageId).catch(() => null);
+        if (originalMessage) {
+          const fakeInteraction = {
+            guildId,
+            update: (data) => originalMessage.edit(data).catch(() => {})
+          };
+          await client.components.get('settings:punishment-config')?.execute(fakeInteraction, [], client);
+        }
       }
     } catch (e) {
-      // ignore
+      // ignore message update errors
     }
 
-    const successContainer = new ContainerBuilder().addSectionComponents(
-      new SectionBuilder().addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(`✅ Правило добавлено: **${type} (${duration} мин.)**`)
-      )
-    );
-
-    return interaction.update({ components: [successContainer], flags: MessageFlags.IsComponentsV2 });
+    return interaction.update({
+      content: `✅ Правило добавлено: **${type} (${duration} мин.)** для ${warnCount} предупреждений\n\nНастройки обновлены в главном меню.`,
+      components: []
+    });
   }
 };
