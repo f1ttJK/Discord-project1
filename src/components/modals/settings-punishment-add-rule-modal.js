@@ -7,7 +7,8 @@ const {
   ContainerBuilder,
   ButtonBuilder,
   ButtonStyle,
-  TextDisplayBuilder
+  TextDisplayBuilder,
+  Routes
 } = require('discord.js');
 
 module.exports = {
@@ -76,46 +77,51 @@ module.exports = {
 
     const typeRow = new ActionRowBuilder().addComponents(typeSelect);
 
-    try {
-      const message = await interaction.channel?.messages.fetch(messageId).catch(() => null);
-      if (!message) {
-        return interaction.reply({
-          content: '❌ Не удалось обновить сообщение.',
-          flags: MessageFlags.Ephemeral
-        });
-      }
-
-      const container = new ContainerBuilder()
-        .addActionRowComponents(
-          new ActionRowBuilder().addComponents(
-            new ButtonBuilder()
-              .setStyle(ButtonStyle.Secondary)
-              .setLabel('Назад')
-              .setCustomId('settings:warn-back')
-          )
-        )
-        .addTextDisplayComponents(
-          new TextDisplayBuilder().setContent('> ### Warn |  Наказания')
-        )
-        .addActionRowComponents(
-          new ActionRowBuilder().addComponents(
-            new ButtonBuilder()
-              .setStyle(ButtonStyle.Primary)
-              .setLabel('Создать наказание')
-              .setCustomId('settings:punishment-add-rule')
-          )
-        )
-        .addActionRowComponents(typeRow);
-
-      await message.edit({
-        components: [container],
-        flags: MessageFlags.IsComponentsV2
+    const cached = interaction.client.ExpiryMap?.get(`punishment-add-rule:${messageId}`);
+    if (!cached?.originalInteraction) {
+      return interaction.reply({
+        content: '❌ Истекло время создания наказания.',
+        flags: MessageFlags.Ephemeral
       });
+    }
+
+    const { applicationId, token, messageId: originalMessageId } = cached.originalInteraction;
+
+    const container = new ContainerBuilder()
+      .addActionRowComponents(
+        new ActionRowBuilder().addComponents(
+          new ButtonBuilder()
+            .setStyle(ButtonStyle.Secondary)
+            .setLabel('Назад')
+            .setCustomId('settings:warn-back')
+        )
+      )
+      .addTextDisplayComponents(
+        new TextDisplayBuilder().setContent('> ### Warn |  Наказания')
+      )
+      .addActionRowComponents(
+        new ActionRowBuilder().addComponents(
+          new ButtonBuilder()
+            .setStyle(ButtonStyle.Primary)
+            .setLabel('Создать наказание')
+            .setCustomId('settings:punishment-add-rule')
+        )
+      )
+      .addActionRowComponents(typeRow);
+
+    try {
+      await client.rest.patch(
+        Routes.webhookMessage(applicationId, token, originalMessageId),
+        {
+          body: {
+            components: [container],
+            flags: MessageFlags.IsComponentsV2
+          }
+        }
+      );
 
       await interaction.deferReply({ flags: MessageFlags.Ephemeral });
       await interaction.deleteReply().catch(() => {});
-
-      interaction.client.ExpiryMap?.delete(`punishment-add-rule:${messageId}`);
     } catch (error) {
       client.logs?.error?.(`Punishment add rule modal error: ${error.message}`);
       if (!interaction.replied) {
@@ -124,6 +130,8 @@ module.exports = {
           flags: MessageFlags.Ephemeral
         }).catch(() => {});
       }
+    } finally {
+      interaction.client.ExpiryMap?.delete(`punishment-add-rule:${messageId}`);
     }
   }
 };

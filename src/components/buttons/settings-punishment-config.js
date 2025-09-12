@@ -29,6 +29,8 @@ module.exports = {
       });
     }
 
+    await interaction.deferUpdate();
+
     const guildId = interaction.guildId;
     const rules = await client.prisma.warnPunishmentRule
       .findMany({ where: { guildId }, orderBy: { warnCount: 'asc' } })
@@ -64,7 +66,7 @@ module.exports = {
       )
     );
 
-    await interaction.update({
+    await interaction.editReply({
       components: [container],
       flags: MessageFlags.IsComponentsV2
     });
