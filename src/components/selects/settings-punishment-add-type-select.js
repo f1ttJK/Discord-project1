@@ -3,7 +3,14 @@ const {
   PermissionFlagsBits,
   ActionRowBuilder,
   StringSelectMenuBuilder,
-  StringSelectMenuOptionBuilder
+  StringSelectMenuOptionBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  ContainerBuilder,
+  TextDisplayBuilder,
+  ModalBuilder,
+  TextInputBuilder,
+  TextInputStyle
 } = require('discord.js');
 
 module.exports = {
@@ -39,24 +46,97 @@ module.exports = {
 
     const guildId = interaction.guildId;
 
-    if (selectedType === 'Timeout' || selectedType === 'Mute') {
-      const durationSelect = new StringSelectMenuBuilder()
-        .setCustomId(`settings:punishment-add-duration:${messageId}:${warnCount}:${selectedType}`)
-        .setPlaceholder('Выберите длительность')
-        .addOptions(
-          new StringSelectMenuOptionBuilder().setLabel('60 сек.').setValue('1'),
-          new StringSelectMenuOptionBuilder().setLabel('5 мин.').setValue('5'),
-          new StringSelectMenuOptionBuilder().setLabel('1 час.').setValue('60'),
-          new StringSelectMenuOptionBuilder().setLabel('1 день').setValue('1440'),
-          new StringSelectMenuOptionBuilder().setLabel('1 неделя').setValue('10080')
+    if (selectedType === 'Timeout') {
+      const container = new ContainerBuilder()
+        .addActionRowComponents(
+          new ActionRowBuilder().addComponents(
+            new ButtonBuilder()
+              .setStyle(ButtonStyle.Secondary)
+              .setLabel('Назад')
+              .setCustomId('settings:warn-back')
+          )
+        )
+        .addTextDisplayComponents(
+          new TextDisplayBuilder().setContent('> ### Warn |  Наказания')
+        )
+        .addActionRowComponents(
+          new ActionRowBuilder().addComponents(
+            new ButtonBuilder()
+              .setStyle(ButtonStyle.Primary)
+              .setLabel('Создать наказание')
+              .setCustomId('settings:punishment-add-rule')
+          )
         );
 
-      const actionRow = new ActionRowBuilder().addComponents(durationSelect);
+      const typeSelect = new StringSelectMenuBuilder()
+        .setCustomId(`settings:punishment-add-type:${messageId}:${warnCount}`)
+        .setPlaceholder('Выберите тип наказания')
+        .addOptions(
+          new StringSelectMenuOptionBuilder().setLabel('Timeout').setValue('Timeout'),
+          new StringSelectMenuOptionBuilder().setLabel('Mute').setValue('Mute'),
+          new StringSelectMenuOptionBuilder().setLabel('Kick').setValue('Kick'),
+          new StringSelectMenuOptionBuilder().setLabel('Ban').setValue('Ban'),
+          new StringSelectMenuOptionBuilder().setLabel('None').setValue('None')
+        );
+
+      container.addActionRowComponents(
+        new ActionRowBuilder().addComponents(typeSelect)
+      );
+
+      const durationRow1 = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setStyle(ButtonStyle.Secondary)
+          .setLabel('60 сек.')
+          .setCustomId(`settings:punishment-add-duration:${messageId}:${warnCount}:Timeout:1`),
+        new ButtonBuilder()
+          .setStyle(ButtonStyle.Secondary)
+          .setLabel('5 мин.')
+          .setCustomId(`settings:punishment-add-duration:${messageId}:${warnCount}:Timeout:5`),
+        new ButtonBuilder()
+          .setStyle(ButtonStyle.Secondary)
+          .setLabel('10 мин.')
+          .setCustomId(`settings:punishment-add-duration:${messageId}:${warnCount}:Timeout:10`),
+        new ButtonBuilder()
+          .setStyle(ButtonStyle.Secondary)
+          .setLabel('1 час')
+          .setCustomId(`settings:punishment-add-duration:${messageId}:${warnCount}:Timeout:60`),
+        new ButtonBuilder()
+          .setStyle(ButtonStyle.Secondary)
+          .setLabel('1 день')
+          .setCustomId(`settings:punishment-add-duration:${messageId}:${warnCount}:Timeout:1440`)
+      );
+
+      const durationRow2 = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setStyle(ButtonStyle.Secondary)
+          .setLabel('1 неделя')
+          .setCustomId(`settings:punishment-add-duration:${messageId}:${warnCount}:Timeout:10080`)
+      );
+
+      container
+        .addActionRowComponents(durationRow1)
+        .addActionRowComponents(durationRow2);
 
       return interaction.update({
-        content: `Количество предупреждений: **${warnCount}**\nТип наказания: **${selectedType}**\nВыберите длительность:`,
-        components: [actionRow]
+        components: [container],
+        flags: MessageFlags.IsComponentsV2
       });
+    }
+
+    if (selectedType === 'Mute') {
+      const modal = new ModalBuilder()
+        .setCustomId(`settings:punishment-add-mute-modal:${messageId}:${warnCount}`)
+        .setTitle('Настройка мута');
+
+      const durationInput = new TextInputBuilder()
+        .setCustomId('mute-duration')
+        .setLabel('Длительность (мин.)')
+        .setStyle(TextInputStyle.Short)
+        .setRequired(true);
+
+      modal.addComponents(new ActionRowBuilder().addComponents(durationInput));
+
+      return interaction.showModal(modal);
     }
 
     try {
@@ -77,36 +157,23 @@ module.exports = {
     } catch (err) {
       client.logs?.error?.(`Failed to create punishment rule: ${err.message}`);
       if (err?.code === 'P2002') {
-        return interaction.update({
+        return interaction.reply({
           content: '❌ Правило с таким количеством предупреждений уже существует.',
-          components: []
+          flags: MessageFlags.Ephemeral
         });
       }
-      return interaction.update({
+      return interaction.reply({
         content: '❌ Ошибка при сохранении правила.',
-        components: []
+        flags: MessageFlags.Ephemeral
       });
     }
 
-    // Rule created successfully - update original settings message
-    try {
-      if (messageId && messageId !== 'direct') {
-        const originalMessage = await interaction.channel?.messages.fetch(messageId).catch(() => null);
-        if (originalMessage) {
-          const fakeInteraction = {
-            guildId,
-            update: (data) => originalMessage.edit(data).catch(() => {})
-          };
-          await client.components.get('settings:punishment-config')?.execute(fakeInteraction, [], client);
-        }
-      }
-    } catch (e) {
-      // ignore message update errors
-    }
-
-    return interaction.update({
-      content: `✅ Правило добавлено: **${selectedType}** для ${warnCount} предупреждений\n\nНастройки обновлены в главном меню.`,
-      components: []
+    // Rule created successfully - show updated rules list
+    const config = client.components.get('settings:punishment-config');
+    const components = await config.buildComponents(guildId, client);
+    await interaction.update({
+      components,
+      flags: MessageFlags.IsComponentsV2
     });
   }
 };
