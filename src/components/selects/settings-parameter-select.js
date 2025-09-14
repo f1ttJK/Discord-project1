@@ -7,17 +7,21 @@ const {
   StringSelectMenuBuilder,
   StringSelectMenuOptionBuilder,
   ChannelSelectMenuBuilder,
+  MentionableSelectMenuBuilder,
   RoleSelectMenuBuilder,
   ButtonBuilder,
   ContainerBuilder,
   SectionBuilder,
   TextDisplayBuilder,
+  SeparatorBuilder, 
+  SeparatorSpacingSize,
 } = require('discord.js');
 
 const SELECT_ID = 'settings:select';
 const OPTION_WARN = 'warn';
 const OPTION_MUTE = 'mute';
 const OPTION_ECONOMY = 'economy';
+const OPTION_LEVELING = 'leveling';
 const OPTION_GENERAL = 'general';
 const REFRESH_BUTTON_ID = 'settings:refresh';
 const TOGGLE_BUTTON_ID = 'settings:toggle';
@@ -39,6 +43,10 @@ function buildBaseContainer() {
         .setLabel('💰 Экономика')
         .setValue(OPTION_ECONOMY)
         .setDescription('Настройка экономической системы'),
+      new StringSelectMenuOptionBuilder()
+        .setLabel('📈 Уровни')
+        .setValue(OPTION_LEVELING)
+        .setDescription('Настройка системы уровней'),
       new StringSelectMenuOptionBuilder()
         .setLabel('⚙️ Общие')
         .setValue(OPTION_GENERAL)
@@ -253,6 +261,135 @@ async function buildEconomyContainers(interaction, client) {
   return [statusSection, configSection, controlsSection];
 }
 
+async function buildLevelingContainers(interaction, client) {
+  const guildId = interaction.guildId;
+  const cfg = await client.prisma.levelConfig.findUnique({ where: { guildId } }).catch(() => null);
+  const roleStacking = cfg?.roleStacking !== false; // default true
+  const voiceCooldown = cfg?.voiceCooldown ?? 60; // seconds
+
+  const statusText = [
+    `> ### 📈 Система рівнів`,
+  ].join('\n');
+
+  // Replace SectionBuilder usage to avoid validation issues; use plain text block
+  const statusHeader = new TextDisplayBuilder().setContent(statusText);
+
+  // Build Leveling Roles UI (guard when model is not generated yet)
+  let existing = [];
+  try {
+    if (client.prisma?.levelingRole?.findMany) {
+      existing = await client.prisma.levelingRole.findMany({
+        where: { guildId },
+        orderBy: { order: 'asc' },
+      });
+    }
+  } catch {}
+
+  // Resolve guild & roles cache once
+  const guildObj = interaction.guild ?? client.guilds?.cache?.get(guildId) ?? null;
+  const rolesCache = guildObj?.roles?.cache;
+
+  // Preselect existing configured roles in the RoleSelect
+  const defaultRoleIds = (existing || [])
+    .map(r => r.roleId)
+    .filter(id => rolesCache?.has?.(id));
+
+  const addRolesRow = new ActionRowBuilder().addComponents(
+    new RoleSelectMenuBuilder()
+      .setCustomId('settings:leveling-roles-add')
+      .setPlaceholder('Виберіть ролі для рівнів')
+      .setMinValues(0)
+      .setMaxValues(15)
+      .setDefaultRoles(...defaultRoleIds)
+  );
+
+  // Build options for existing roles list
+  const opts = [];
+  for (const r of existing) {
+    const role = rolesCache?.get?.(r.roleId);
+    const label = role ? `${role.name} • L${r.minLevel}` : `@unknown(${r.roleId}) • L${r.minLevel}`;
+    opts.push(new StringSelectMenuOptionBuilder().setLabel(label).setValue(String(r.id)));
+  }
+  if (opts.length === 0) {
+    opts.push(new StringSelectMenuOptionBuilder().setLabel('Немає налаштованих ролей').setValue('none').setDefault(true));
+  }
+
+  const listRow = new ActionRowBuilder().addComponents(
+    new StringSelectMenuBuilder()
+      .setCustomId('settings:leveling-role-edit')
+      .setPlaceholder('Виберіть роль для редагування рівня')
+      .setMinValues(1)
+      .setMaxValues(1)
+      .addOptions(...opts)
+  );
+
+  // Single container combining status + controls (per request)
+  // Fetch ignore entries up-front (no await inside builders)
+  let ignoreChannels = [], ignoreUsers = [], ignoreRoles = [];
+  try {
+    if (client.prisma?.levelingIgnore?.findMany) {
+      [ignoreChannels, ignoreUsers, ignoreRoles] = await Promise.all([
+        client.prisma.levelingIgnore.findMany({ where: { guildId, kind: 'Channel' } }),
+        client.prisma.levelingIgnore.findMany({ where: { guildId, kind: 'User' } }),
+        client.prisma.levelingIgnore.findMany({ where: { guildId, kind: 'Role' } }),
+      ]);
+    }
+  } catch {}
+
+  const defaultIgnoredChannelIds = ignoreChannels
+    .map(r => r.targetId)
+    .filter(id => guildObj?.channels?.cache?.has?.(id));
+  const defaultIgnoredUserIds = ignoreUsers
+    .map(r => r.targetId)
+    .filter(id => client.users?.cache?.has?.(id));
+  const defaultIgnoredRoleIds = ignoreRoles
+    .map(r => r.targetId)
+    .filter(id => rolesCache?.has?.(id));
+
+  const panelContainer = new ContainerBuilder()
+    .addTextDisplayComponents(statusHeader)
+    // Level roles section first
+    .addActionRowComponents(addRolesRow)
+    .addActionRowComponents(listRow)
+    .addSeparatorComponents(
+      new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true),
+    )
+    .addSectionComponents(
+      new SectionBuilder()
+          .setButtonAccessory(
+              new ButtonBuilder()
+              .setStyle(roleStacking ? ButtonStyle.Success : ButtonStyle.Danger)
+              .setLabel(roleStacking ? 'Стек ролів: Увімк.' : 'Стек ролів: Вимк.')
+              .setCustomId('settings:leveling-toggle-stacking')
+          )
+          .addTextDisplayComponents(
+              new TextDisplayBuilder().setContent("> ### Стек ролів"),
+          ),
+  )
+    .addSeparatorComponents(
+      new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true),
+    )
+    .addTextDisplayComponents(new TextDisplayBuilder().setContent('> ### Ігнор каналів, користувачів і ролей'))
+    .addActionRowComponents(row => row.setComponents(
+      new ChannelSelectMenuBuilder()
+        .setCustomId('settings:leveling-ignore-channels')
+        .setPlaceholder('Ігнор каналів')
+        .setMinValues(0)
+        .setMaxValues(25)
+        .setChannelTypes(ChannelType.GuildText, ChannelType.GuildVoice, ChannelType.GuildAnnouncement)
+        .setDefaultChannels(...defaultIgnoredChannelIds)
+    ))
+    .addActionRowComponents(row => row.setComponents(
+      new MentionableSelectMenuBuilder()
+        .setCustomId('settings:leveling-ignore-mentionables')
+        .setPlaceholder('Ігнор користувачів і ролей')
+        .setMinValues(0)
+        .setMaxValues(25)
+    ));
+
+  return [panelContainer];
+}
+
 module.exports = {
   customId: SELECT_ID,
   async execute(interaction, _args, client) {
@@ -305,6 +442,9 @@ module.exports = {
     } else if (value === OPTION_GENERAL) {
       const generalContainers = await buildGeneralContainers(interaction, client);
       containers = [baseContainer, ...generalContainers];
+    } else if (value === OPTION_LEVELING) {
+      const levelingContainers = await buildLevelingContainers(interaction, client);
+      containers = [baseContainer, ...levelingContainers];
     }
 
     await interaction.update({ components: containers, flags: MessageFlags.IsComponentsV2 });

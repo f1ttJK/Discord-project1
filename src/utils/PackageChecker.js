@@ -33,23 +33,34 @@ function ReadFolder(basePath = '', depth = 5) {
 }
 
 function getPackages(file) {
-    const content = fs.readFileSync(file, "utf-8");
+    const rawContent = fs.readFileSync(file, "utf-8");
+    // Strip block and line comments to avoid false positives from commented text
+    const content = rawContent
+        .replace(/\/\*[\s\S]*?\*\//g, '') // block comments
+        .replace(/(^|[^:])\/\/.*$/gm, '$1'); // line comments (ignore URL protocols like http://)
+
     const packages = new Set();
-    const requirePattern = /(?:require|from|import)\s*(?:\()?['"`]([^'"`{}$]+)['"`]/g;
-    let match;
-    
-    while ((match = requirePattern.exec(content)) !== null) {
-        const raw = match[1];
-        // Preserve scoped package name like '@scope/pkg'
+
+    // Precise JS import/require patterns
+    const importFromRe = /import\s+[^;'"`]+?\s+from\s+['"`]([^'"`]+)['"`]/g;
+    const importBareRe = /import\s+['"`]([^'"`]+)['"`]/g; // e.g., import 'dotenv/config'
+    const requireRe = /require\(\s*['"`]([^'"`]+)['"`]\s*\)/g;
+
+    const addPkg = (raw) => {
+        if (!raw) return;
         const pkg = raw.startsWith('@') ? raw.split('/').slice(0, 2).join('/') : raw.split('/')[0];
-        if (IGNORED_PACKAGES.includes(pkg)) {
-            continue;
-        }
-        if (!builtInModules.has(pkg) && !pkg.startsWith('node:') && !pkg.startsWith('.')) {
-            packages.add(pkg);
-        }
-    }
-    
+        if (IGNORED_PACKAGES.includes(pkg)) return;
+        if (builtInModules.has(pkg)) return;
+        if (pkg.startsWith('node:')) return;
+        if (pkg.startsWith('.')) return; // local relative import
+        packages.add(pkg);
+    };
+
+    let m;
+    while ((m = importFromRe.exec(content)) !== null) addPkg(m[1]);
+    while ((m = importBareRe.exec(content)) !== null) addPkg(m[1]);
+    while ((m = requireRe.exec(content)) !== null) addPkg(m[1]);
+
     return Array.from(packages);
 }
 

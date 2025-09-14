@@ -32,6 +32,8 @@ model Guild {
   members    Member[]
   logs       CommandLog[]
   levelConfig LevelConfig?
+  levelingRoles LevelingRole[]
+  levelingIgnores LevelingIgnore[]
   economyBalances EconomyBalance[]
   economyConfig   EconomyConfig?
   // Moderation relations
@@ -88,6 +90,20 @@ model LevelConfig {
   voiceCooldown Int     @default(60)   @map("voice_cooldown")
 
   guild Guild @relation(fields: [guildId], references: [id])
+}
+
+// Leveling role mapping per guild
+model LevelingRole {
+  id       Int    @id @default(autoincrement())
+  guildId  String
+  roleId   String
+  minLevel Int    @default(1)
+  order    Int    @default(0)
+
+  guild Guild @relation(fields: [guildId], references: [id])
+
+  @@unique([guildId, roleId])
+  @@index([guildId, order])
 }
 
 // Economy models
@@ -187,4 +203,24 @@ enum PunishmentType {
   Mute
   Kick
   Ban
+}
+
+// Ignore lists for leveling accrual
+enum IgnoreKind {
+  Channel
+  User
+  Role
+}
+
+model LevelingIgnore {
+  id        Int        @id @default(autoincrement())
+  guildId   String
+  kind      IgnoreKind
+  targetId  String
+  createdAt DateTime   @default(now())
+
+  guild Guild @relation(fields: [guildId], references: [id])
+
+  @@index([guildId, kind])
+  @@unique([guildId, kind, targetId])
 }

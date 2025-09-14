@@ -1,4 +1,6 @@
 // ensureGuildAndUser removed; using connectOrCreate instead
+const Leveling = require('../services/LevelingService');
+const RoleService = require('../services/RoleService');
 
 module.exports = {
   event: 'messageCreate',
@@ -9,6 +11,20 @@ module.exports = {
 
       const guildId = message.guild.id;
       const userId = message.author.id;
+
+      // Ignore lists: channels, users, roles
+      try {
+        const [ignCh, ignUsers, ignRoles] = await Promise.all([
+          client.prisma.levelingIgnore.findMany({ where: { guildId, kind: 'Channel' } }),
+          client.prisma.levelingIgnore.findMany({ where: { guildId, kind: 'User' } }),
+          client.prisma.levelingIgnore.findMany({ where: { guildId, kind: 'Role' } }),
+        ]);
+        const chIgnored = ignCh.some(r => r.targetId === message.channelId);
+        const userIgnored = ignUsers.some(r => r.targetId === userId);
+        const roles = message.member?.roles?.cache;
+        const roleIgnored = roles ? ignRoles.some(r => roles.has(r.targetId)) : false;
+        if (chIgnored || userIgnored || roleIgnored) return; // skip accrual entirely
+      } catch {}
 
       // Ensure related Guild and User exist to satisfy FK constraints
       await client.prisma.guild.upsert({
@@ -35,6 +51,16 @@ module.exports = {
         },
         update: { msgCount: { increment: 1 } },
       });
+
+      // Add leveling EXP with its own cooldown (independent from economy)
+      try {
+        const { addedXp, newLevel, oldLevel } = await Leveling.addMessageXp(client, guildId, userId, new Date());
+        if (addedXp > 0 && newLevel !== null && oldLevel !== null && newLevel > oldLevel) {
+          await RoleService.syncLevelRoles(message.guild, userId, newLevel, client);
+        }
+      } catch (e) {
+        client.logs?.error?.(`messageCreate leveling error: ${e.message}`);
+      }
 
       const row = await client.prisma.economyBalance.findUnique({
         where: { guildId_userId: { guildId, userId } },

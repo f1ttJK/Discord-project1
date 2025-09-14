@@ -1,4 +1,6 @@
 // ensureGuildAndUser removed; using connectOrCreate instead
+const Leveling = require('../services/LevelingService');
+const RoleService = require('../services/RoleService');
 
 module.exports = {
   event: 'voiceStateUpdate',
@@ -53,6 +55,32 @@ module.exports = {
         const minutes = Math.floor(ms / 60000);
         const seconds = Math.floor(ms / 1000);
 
+        // Ignore lists: channels, users, roles (skip accrual if ignored)
+        try {
+          const [ignCh, ignUsers, ignRoles] = await Promise.all([
+            client.prisma.levelingIgnore.findMany({ where: { guildId, kind: 'Channel' } }),
+            client.prisma.levelingIgnore.findMany({ where: { guildId, kind: 'User' } }),
+            client.prisma.levelingIgnore.findMany({ where: { guildId, kind: 'Role' } }),
+          ]);
+          const channelId = oldState.channelId || newState.channelId;
+          const chIgnored = channelId ? ignCh.some(r => r.targetId === channelId) : false;
+          const userIgnored = ignUsers.some(r => r.targetId === userId);
+          const memberRoles = (newState.member || oldState.member)?.roles?.cache;
+          const roleIgnored = memberRoles ? ignRoles.some(r => memberRoles.has(r.targetId)) : false;
+          if (chIgnored || userIgnored || roleIgnored) {
+            // Still store raw voiceSeconds for stats, but do not add XP below
+            if (seconds > 0) {
+              await client.prisma.member.upsert({
+                where: { guildId_userId: { guildId, userId } },
+                create: { guildId, userId, xp: 0, level: 0, msgCount: 0, voiceSeconds: seconds },
+                update: { voiceSeconds: { increment: seconds } },
+              });
+            }
+            lastVoiceJoin.delete(key);
+            return;
+          }
+        } catch {}
+
         // Always accumulate voice seconds, even if < 1 minute
         if (seconds > 0) {
           await client.prisma.member.upsert({
@@ -60,6 +88,26 @@ module.exports = {
             create: { guildId, userId, xp: 0, level: 0, msgCount: 0, voiceSeconds: seconds },
             update: { voiceSeconds: { increment: seconds } },
           });
+        }
+
+        // Apply voice cooldown (LevelConfig.voiceCooldown): require minimum session length
+        let eligibleSeconds = seconds;
+        try {
+          const cfg = await client.prisma.levelConfig.findUnique({ where: { guildId } });
+          const voiceCooldown = cfg?.voiceCooldown ?? 60;
+          if (voiceCooldown > 0 && eligibleSeconds < voiceCooldown) {
+            eligibleSeconds = 0;
+          }
+        } catch {}
+
+        // Add leveling EXP for full minutes in voice
+        try {
+          const { addedXp, newLevel, oldLevel } = await Leveling.addVoiceXp(client, guildId, userId, eligibleSeconds);
+          if (addedXp > 0 && newLevel !== null && oldLevel !== null && newLevel > oldLevel) {
+            await RoleService.syncLevelRoles(newState.guild || oldState.guild, userId, newLevel, client);
+          }
+        } catch (e) {
+          client.logs?.error?.(`voiceStateUpdate leveling error: ${e.message}`);
         }
 
         // Economy reward only for full minutes
