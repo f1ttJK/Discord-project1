@@ -1,0 +1,179 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Directory of warn reasons per guild (for autocomplete/UI)
+model WarnReason {
+  id          Int      @id @default(autoincrement())
+  guildId     String
+  label       String
+  labelLower  String
+  description String?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  guild Guild @relation(fields: [guildId], references: [id])
+
+  @@index([guildId])
+  @@unique([guildId, label])
+  @@unique([guildId, labelLower])
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("API_DATABASE_URL")
+}
+
+// Minimal API-local models for auth/session
+model User {
+  id            String          @id @map("user_id")
+  createdAt     DateTime        @default(now())
+  oauthAccounts OAuthAccount[]
+  sessions      Session[]
+}
+
+model OAuthAccount {
+  id                Int       @id @default(autoincrement())
+  userId            String
+  provider          String
+  providerAccountId String
+  accessToken       String
+  refreshToken      String
+  tokenType         String?
+  scope             String?
+  expiresAt         DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id        String   @id
+  userId    String
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+// Guild models for configuration managed by API
+model Guild {
+  id          String       @id @map("guild_id")
+  createdAt   DateTime     @default(now())
+  config      GuildConfig?
+  settings    GuildSettings?
+  levelingRoleRewards LevelingRoleReward[]
+  levelingIgnores     LevelingIgnore[]
+  warnEscalationRules WarnEscalationRule[]
+  warns               Warn[]
+  warnReasons         WarnReason[]
+}
+
+model GuildConfig {
+  guildId      String  @id
+  levelingEnabled Boolean @default(true)
+  // example fields, extend per docs/leveling.md as needed
+  curve        String  @default("linear")
+  antiAbuse    String? // JSON string or structure description; simplify here
+  roleRewards  String? // JSON string of rewards mapping
+  locale       String? @default("en")
+
+  guild Guild @relation(fields: [guildId], references: [id])
+}
+
+// Normalized tables for systems
+model LevelingRoleReward {
+  id        Int      @id @default(autoincrement())
+  guildId   String
+  roleId    String
+  level     Int      @default(1)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  guild Guild @relation(fields: [guildId], references: [id])
+
+  @@index([guildId])
+  @@unique([guildId, roleId])
+}
+
+enum IgnoreKind {
+  Channel
+  User
+  Role
+}
+
+model LevelingIgnore {
+  id        Int        @id @default(autoincrement())
+  guildId   String
+  kind      IgnoreKind
+  targetId  String
+  createdAt DateTime   @default(now())
+
+  guild Guild @relation(fields: [guildId], references: [id])
+
+  @@index([guildId])
+  @@unique([guildId, kind, targetId])
+}
+
+enum WarnAction {
+  none
+  mute
+  kick
+  ban
+}
+
+model WarnEscalationRule {
+  id        Int        @id @default(autoincrement())
+  guildId   String
+  count     Int
+  action    WarnAction @default(none)
+  durationMinutes Int?
+  order     Int        @default(0)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  guild Guild @relation(fields: [guildId], references: [id])
+
+  @@index([guildId])
+  @@unique([guildId, count])
+}
+
+// Individual user warns
+model Warn {
+  id          Int      @id @default(autoincrement())
+  guildId     String
+  userId      String
+  moderatorId String
+  reason      String?
+  createdAt   DateTime @default(now())
+  expiresAt   DateTime?
+  revokedAt   DateTime?
+  revokedBy   String?
+  revokeReason String?
+
+  guild Guild @relation(fields: [guildId], references: [id])
+
+  @@index([guildId])
+  @@index([guildId, userId])
+}
+
+model GuildSettings {
+  guildId   String  @id
+  // JSON columns for different systems (use JSON since provider=sqlite; otherwise use native Json type)
+  leveling  String? // JSON string
+  warns     String? // JSON string
+  economy   String? // JSON string
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  guild Guild @relation(fields: [guildId], references: [id])
+}

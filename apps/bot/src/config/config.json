@@ -1,0 +1,7 @@
+{
+    "token": null,
+    "botID": null,
+    "developerIds": ["456484704280117268"],
+    "devGuild": null,
+    "sqliteFileName": "database.sqlite"
+}

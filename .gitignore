@@ -1,3 +1,4 @@
-node_modules
-config.json
-/src/config
+apps/bot/node_modules
+apps/bot/config
+
+apps/api/node_modules
