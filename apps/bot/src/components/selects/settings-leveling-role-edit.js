@@ -5,7 +5,7 @@ module.exports = {
 
   async execute(interaction, _args, client) {
     if (!interaction.member?.permissions?.has(PermissionFlagsBits.ManageGuild)) {
-      return interaction.reply({ content: '    .', flags: MessageFlags.Ephemeral });
+      return interaction.reply({ content: 'У вас недостаточно прав для изменения настроек.', flags: MessageFlags.Ephemeral });
     }
 
     const guildId = interaction.guildId;

@@ -7,7 +7,7 @@ module.exports = {
     .setName('profile').setDescription('Display the economy profile card for yourself or another member')
     .addUserOption(opt => opt
       .setName('user')
-      .setDescription(' (   )')
+      .setDescription('Пользователь (по умолчанию вы)')
       .setRequired(false)
     ),
   guildOnly: true,

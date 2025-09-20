@@ -5,7 +5,7 @@ module.exports = {
 
   async execute(interaction, _args, client) {
     if (!interaction.member?.permissions?.has(PermissionFlagsBits.ManageGuild)) {
-      return interaction.reply({ content: '    .', flags: MessageFlags.Ephemeral });
+      return interaction.reply({ content: 'У вас недостаточно прав для изменения настроек.', flags: MessageFlags.Ephemeral });
     }
 
     const guildId = interaction.guildId;
@@ -38,7 +38,7 @@ module.exports = {
             update: async (data) => {
               if (typeof interaction.update === 'function') return interaction.update(data);
               if (interaction.message && typeof interaction.message.edit === 'function') return interaction.message.edit(data);
-              return interaction.reply?.({ content: '.', flags: MessageFlags.Ephemeral });
+              return interaction.reply?.({ content: 'Не удалось обновить интерфейс.', flags: MessageFlags.Ephemeral });
             }
           };
           await settingsHandler.execute(mock, [], client);
@@ -49,7 +49,7 @@ module.exports = {
       }
       // Guard: model may not exist until Prisma schema is pushed
       if (!client.prisma?.levelingRole?.findMany) {
-        return interaction.reply({ content: '    . : npx prisma generate && npm run prisma:push', flags: MessageFlags.Ephemeral });
+        return interaction.reply({ content: 'Модель базы данных недоступна. Выполните npx prisma generate && npm run prisma:push.', flags: MessageFlags.Ephemeral });
       }
 
       // Fetch existing roles to maintain order and enforce cap (e.g., 7)
@@ -115,7 +115,7 @@ module.exports = {
           update: async (data) => {
             if (typeof interaction.update === 'function') return interaction.update(data);
             if (interaction.message && typeof interaction.message.edit === 'function') return interaction.message.edit(data);
-            return interaction.reply?.({ content: '.', flags: MessageFlags.Ephemeral });
+            return interaction.reply?.({ content: 'Не удалось обновить интерфейс.', flags: MessageFlags.Ephemeral });
           }
         };
         await settingsHandler.execute(mock, [], client);

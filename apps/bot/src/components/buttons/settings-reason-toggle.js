@@ -15,7 +15,7 @@ module.exports = {
     const idRaw = args?.[0] ?? interaction.customId.split(":")[2];
     const id = Number.parseInt(String(idRaw), 10);
     if (!Number.isFinite(id)) {
-      return interaction.reply({ content: "  ID .", flags: MessageFlags.Ephemeral });
+      return interaction.reply({ content: 'Некорректный ID.', flags: MessageFlags.Ephemeral });
     }
 
     try {
@@ -25,7 +25,7 @@ module.exports = {
       const reasons = await svc.listReasons(guildId, { active: false });
       const target = (reasons || []).find(r => r.id === id);
       if (!target) {
-        return interaction.reply({ content: "   .", flags: MessageFlags.Ephemeral });
+        return interaction.reply({ content: 'Причина не найдена.', flags: MessageFlags.Ephemeral });
       }
       const updated = await svc.updateReason(guildId, id, { active: !Boolean(target.active) });
 
@@ -50,7 +50,7 @@ module.exports = {
       return;
     } catch (e) {
       client.logs?.error?.(`Reason toggle error: ${e.message}`);
-      const msg = "    .";
+      const msg = 'Произошла ошибка при изменении причины.';
       if (interaction.replied || interaction.deferred) {
         return interaction.followUp({ content: msg, flags: MessageFlags.Ephemeral });
       }

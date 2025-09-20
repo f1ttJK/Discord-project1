@@ -5,10 +5,10 @@ const { apiRequest } = require('../../../services/ApiClient');
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('rank')
-    .setDescription('  , EXP     ')
+    .setDescription('Показать текущий уровень и EXP участника.')
     .addUserOption(opt => opt
       .setName('user')
-      .setDescription(' (   )')
+      .setDescription('Пользователь (по умолчанию вы)')
       .setRequired(false)
     ),
   guildOnly: true,
@@ -25,7 +25,7 @@ module.exports = {
     try {
       row = await apiRequest(`/v1/leveling/${guildId}/member/${userId}`);
     } catch (e) {
-      return interaction.reply({ content: `      API: ${e.message}`, flags: MessageFlags.Ephemeral });
+      return interaction.reply({ content: `Не удалось получить данные из API: ${e.message}`, flags: MessageFlags.Ephemeral });
     }
 
     const totalXp = Number(row?.xp ?? 0);
@@ -46,21 +46,21 @@ module.exports = {
     // Build simple text progress bar
     const barLen = 20;
     const filled = Math.round(barLen * progress);
-    const bar = ''.repeat(filled) + ''.repeat(Math.max(0, barLen - filled));
+    const bar = '█'.repeat(filled) + '░'.repeat(Math.max(0, barLen - filled));
 
     const embed = new EmbedBuilder()
       .setColor(0x5865F2)
       .setAuthor({ name: target.tag, iconURL: target.displayAvatarURL({ size: 64 }) })
-      .setTitle('  ')
+      .setTitle('Статистика ранга')
       .addFields(
-        { name: '', value: `${level}`, inline: true },
-        { name: 'EXP ()', value: `${totalXp}`, inline: true },
-        { name: '  ', value: `${needForNext - inLevelXp} EXP`, inline: true },
+        { name: 'Уровень', value: `${level}`, inline: true },
+        { name: 'Всего EXP', value: `${totalXp}`, inline: true },
+        { name: 'До следующего уровня', value: `${needForNext - inLevelXp} EXP`, inline: true },
       )
       .addFields(
-        { name: `  ${nextLevel} `, value: `${bar} ${(progress * 100).toFixed(1)}%` }
+        { name: `Прогресс к уровню ${nextLevel}`, value: `${bar} ${(progress * 100).toFixed(1)}%` }
       )
-      .setFooter({ text: `: ${row?.msgCount ?? 0}  : ${row?.voiceSeconds ?? 0}s` });
+      .setFooter({ text: `Сообщений: ${row?.msgCount ?? 0} · Голос: ${row?.voiceSeconds ?? 0}s` });
 
     await interaction.reply({ embeds: [embed] });
   }
