@@ -9,7 +9,7 @@ module.exports = {
   async execute(interaction, args, client) {
     if (!interaction.member?.permissions?.has(PermissionFlagsBits.ManageGuild)) {
       return interaction.reply({
-        content: '    .',
+        content: 'У вас недостаточно прав для изменения настроек.',
         flags: MessageFlags.Ephemeral
       });
     }
@@ -18,7 +18,7 @@ module.exports = {
     if (!client?.prisma) {
       client.logs?.error?.('Database client not available in punishment add duration button');
       return interaction.reply({
-        content: '     .',
+        content: 'База данных недоступна.',
         flags: MessageFlags.Ephemeral
       });
     }
@@ -29,7 +29,7 @@ module.exports = {
 
     if (!warnCount || !type || !duration) {
       return interaction.reply({
-        content: ' :    .',
+        content: 'Некорректные параметры запроса.',
         flags: MessageFlags.Ephemeral
       });
     }
@@ -55,12 +55,12 @@ module.exports = {
       client.logs?.error?.(`Failed to create punishment rule with duration: ${err.message}`);
       if (err?.code === 'P2002') {
         return interaction.reply({
-          content: '       .',
+          content: 'Такое правило уже существует.',
           flags: MessageFlags.Ephemeral
         });
       }
       return interaction.reply({
-        content: '    .',
+        content: 'Не удалось создать правило.',
         flags: MessageFlags.Ephemeral
       });
     }

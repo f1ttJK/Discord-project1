@@ -9,7 +9,7 @@ module.exports = {
   async execute(interaction, args, client) {
     if (!interaction.member?.permissions?.has(PermissionFlagsBits.ManageGuild)) {
       return interaction.reply({
-        content: '    .',
+        content: 'У вас недостаточно прав для изменения настроек.',
         flags: MessageFlags.Ephemeral
       });
     }
@@ -19,7 +19,7 @@ module.exports = {
 
     if (!reasonId || !selectedType) {
       return interaction.reply({
-        content: ' :    .',
+        content: 'Некорректные параметры запроса.',
         flags: MessageFlags.Ephemeral
       });
     }
@@ -44,7 +44,7 @@ module.exports = {
         await editRuleHandler.execute(interaction, [reasonId], client);
       } else {
         await interaction.reply({
-          content: `   : **${selectedType}**`,
+          content: `Тип наказания установлен: **${selectedType}**`,
           flags: MessageFlags.Ephemeral
         });
       }
@@ -52,7 +52,7 @@ module.exports = {
     } catch (error) {
       client.logs.error?.(`Punishment type update error: ${error.message}`);
       await interaction.reply({
-        content: '     .',
+        content: 'Не удалось обновить тип наказания.',
         flags: MessageFlags.Ephemeral
       });
     }

@@ -13,10 +13,10 @@ function formatHMS(totalSeconds) {
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('activity')
-    .setDescription('   (    )')
+    .setDescription('Показать активность участника (сообщения и голос).')
     .addUserOption(opt => opt
       .setName('user')
-      .setDescription('  (   )')
+      .setDescription('Пользователь (по умолчанию вы)')
       .setRequired(false)
     ),
   guildOnly: true,
@@ -37,11 +37,11 @@ module.exports = {
 
     const embed = new EmbedBuilder()
       .setColor(0x57F287)
-      .setTitle(' ')
-      .setDescription(`: <@${userId}>`)
+      .setTitle('Статистика активности')
+      .setDescription(`Пользователь: <@${userId}>`)
       .addFields(
-        { name: '', value: String(msgCount), inline: true },
-        { name: '  ', value: formatHMS(voiceSeconds), inline: true },
+        { name: 'Сообщений', value: String(msgCount), inline: true },
+        { name: 'В голосе', value: formatHMS(voiceSeconds), inline: true },
       );
 
     await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });

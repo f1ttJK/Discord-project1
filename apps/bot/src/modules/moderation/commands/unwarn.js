@@ -18,8 +18,8 @@ module.exports = {
     const warnId = interaction.options.getInteger('warn_id', false);
     const revokeReason = interaction.options.getString('reason', false) || undefined;
 
-    if (!guild) return interaction.reply({ content: '    .', flags: MessageFlags.Ephemeral });
-    if (targetUser.bot) return interaction.reply({ content: '   .', flags: MessageFlags.Ephemeral });
+    if (!guild) return interaction.reply({ content: 'Команда доступна только на сервере.', flags: MessageFlags.Ephemeral });
+    if (targetUser.bot) return interaction.reply({ content: 'Нельзя снимать предупреждение с бота.', flags: MessageFlags.Ephemeral });
 
     try {
       if (process.env.USE_API_DB === 'true') {
@@ -32,64 +32,64 @@ module.exports = {
           const warns = await svc.list(guildId, targetUser.id);
           const active = (warns || []).filter(w => !w.revokedAt);
           if (active.length === 0) {
-            return interaction.reply({ content: '    .', flags: MessageFlags.Ephemeral });
+            return interaction.reply({ content: 'Активных предупреждений не найдено.', flags: MessageFlags.Ephemeral });
           }
           idToRevoke = active[0].id; //    (list   id desc)
         }
 
         const revoked = await svc.revoke(guildId, idToRevoke, { revokedBy: moderator.id, revokeReason });
         if (!revoked) {
-          return interaction.reply({ content: '  .', flags: MessageFlags.Ephemeral });
+          return interaction.reply({ content: 'Не удалось отозвать предупреждение.', flags: MessageFlags.Ephemeral });
         }
 
         //    
         try {
           const dmEmbed = new EmbedBuilder()
             .setColor(0x2F3136)
-            .setTitle(' ')
-            .setDescription(`  **${guild.name}**      .`)
+            .setTitle('Предупреждение отозвано')
+            .setDescription(`На сервере **${guild.name}** было отозвано ваше предупреждение.`)
             .addFields(
-              { name: 'ID ', value: String(revoked.id), inline: true },
-              { name: '', value: `<@${moderator.id}>`, inline: true },
-              { name: ' ', value: revokeReason ? revokeReason : '', inline: false },
+              { name: 'ID предупреждения', value: String(revoked.id), inline: true },
+              { name: 'Модератор', value: `<@${moderator.id}>`, inline: true },
+              { name: 'Причина', value: revokeReason ? revokeReason : 'Не указана', inline: false },
             )
             .setFooter({ text: guild.name })
             .setTimestamp();
           await targetUser.send({ embeds: [dmEmbed] }).catch(() => null);
         } catch {}
 
-        return interaction.reply({ content: `  #${idToRevoke} .`, flags: MessageFlags.Ephemeral });
+        return interaction.reply({ content: `Предупреждение #${idToRevoke} отозвано.`, flags: MessageFlags.Ephemeral });
       }
 
       // Legacy path (Prisma)
       const prisma = client.prisma;
-      if (!prisma) return interaction.reply({ content: '  .', flags: MessageFlags.Ephemeral });
+      if (!prisma) return interaction.reply({ content: 'База данных недоступна.', flags: MessageFlags.Ephemeral });
       const guildId = guild.id;
       let idToRevoke = warnId;
       if (!idToRevoke) {
         const last = await prisma.warn.findFirst({ where: { guildId, userId: targetUser.id, revokedAt: null }, orderBy: { id: 'desc' } });
-        if (!last) return interaction.reply({ content: '    .', flags: MessageFlags.Ephemeral });
+        if (!last) return interaction.reply({ content: 'Активное предупреждение не найдено.', flags: MessageFlags.Ephemeral });
         idToRevoke = last.id;
       }
       await prisma.warn.update({ where: { id: idToRevoke }, data: { revokedAt: new Date(), revokedBy: moderator.id, revokeReason } });
       try {
         const dmEmbed = new EmbedBuilder()
           .setColor(0x2F3136)
-          .setTitle(' ')
-          .setDescription(`  **${guild.name}**      .`)
+          .setTitle('Предупреждение отозвано')
+          .setDescription(`На сервере **${guild.name}** было отозвано ваше предупреждение.`)
           .addFields(
-            { name: 'ID ', value: String(idToRevoke), inline: true },
-            { name: '', value: `<@${moderator.id}>`, inline: true },
-            { name: ' ', value: revokeReason ? revokeReason : '', inline: false },
+            { name: 'ID предупреждения', value: String(idToRevoke), inline: true },
+            { name: 'Модератор', value: `<@${moderator.id}>`, inline: true },
+            { name: 'Причина', value: revokeReason ? revokeReason : 'Не указана', inline: false },
           )
           .setFooter({ text: guild.name })
           .setTimestamp();
         await targetUser.send({ embeds: [dmEmbed] }).catch(() => null);
       } catch {}
-      return interaction.reply({ content: `  #${idToRevoke} .`, flags: MessageFlags.Ephemeral });
+      return interaction.reply({ content: `Предупреждение #${idToRevoke} отозвано.`, flags: MessageFlags.Ephemeral });
     } catch (e) {
       client.logs?.error?.(`unwarn error: ${e.message}`);
-      return interaction.reply({ content: '    .', flags: MessageFlags.Ephemeral });
+      return interaction.reply({ content: 'Произошла ошибка при отзыве предупреждения.', flags: MessageFlags.Ephemeral });
     }
   }
 };

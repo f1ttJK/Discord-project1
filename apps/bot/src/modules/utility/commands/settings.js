@@ -22,33 +22,33 @@ const REFRESH_BUTTON_ID = 'settings:refresh';
 function buildBaseContainer() {
   const select = new StringSelectMenuBuilder()
     .setCustomId(SELECT_ID)
-    .setPlaceholder('   ')
+    .setPlaceholder('Выберите категорию настроек')
     .addOptions(
       new StringSelectMenuOptionBuilder()
-        .setLabel(' ')
+        .setLabel('Предупреждения')
         .setValue(OPTION_WARN)
-        .setDescription('Настройки предупреждений'),
+        .setDescription('Настройки системы предупреждений'),
       new StringSelectMenuOptionBuilder()
-        .setLabel(' ')
+        .setLabel('Муты')
         .setValue(OPTION_MUTE)
-        .setDescription('Настройки мута'),
+        .setDescription('Управление системой мутов'),
       new StringSelectMenuOptionBuilder()
-        .setLabel(' ')
+        .setLabel('Экономика')
         .setValue(OPTION_ECONOMY)
-        .setDescription('Экономика сервера'),
+        .setDescription('Экономические параметры сервера'),
       new StringSelectMenuOptionBuilder()
-        .setLabel(' ')
+        .setLabel('Уровни')
         .setValue('leveling')
-        .setDescription('Прокачка (уровни)'),
+        .setDescription('Настройки прокачки и опыта'),
       new StringSelectMenuOptionBuilder()
-        .setLabel(' ')
+        .setLabel('Общее')
         .setValue(OPTION_GENERAL)
-        .setDescription('Общие настройки')
+        .setDescription('Основные параметры бота')
     );
 
   const refreshBtn = new ButtonBuilder()
     .setStyle(ButtonStyle.Secondary)
-    .setLabel(' ')
+    .setLabel('Обновить')
     .setCustomId(REFRESH_BUTTON_ID);
 
   return new ContainerBuilder()
@@ -63,23 +63,23 @@ function buildWelcomeSection() {
         .setButtonAccessory(
           new ButtonBuilder()
             .setStyle(ButtonStyle.Primary)
-            .setLabel(' ')
+            .setLabel('Добро пожаловать')
             .setCustomId('settings:info')
             .setDisabled(true)
         )
         .addTextDisplayComponents(
           new TextDisplayBuilder().setContent(
-            '> ###    \n' +
-            '>        .\n' +
+            '> ### Панель настроек\n' +
+            '> Используйте меню ниже, чтобы настроить поведение бота.\n' +
             '> \n' +
-            '> ** :**\n' +
-            '>   **** -   \n' +
-            '>   **** -   \n' +
-            '>   **** -   \n' +
-            '>   **** -   \n' +
-            '>   **** -   \n' +
+            '> **Разделы:**\n' +
+            '> • Предупреждения — управление системой наказаний.\n' +
+            '> • Муты — выбор роли и длительности мута.\n' +
+            '> • Экономика — параметры внутриигровых валют.\n' +
+            '> • Уровни — конфигурация системы прокачки.\n' +
+            '> • Общее — базовые настройки сервера.\n' +
             '> \n' +
-            '> *  *'
+            '> *Выберите пункт, чтобы продолжить.*'
           )
         )
     );

@@ -32,21 +32,21 @@ module.exports = {
     const targetUser = interaction.options.getUser('user', true);
     const reasonLabel = interaction.options.getString('reason', true);
 
-    if (!guild) return interaction.reply({ content: '    .', flags: MessageFlags.Ephemeral });
-    if (targetUser.bot) return interaction.reply({ content: '   .', flags: MessageFlags.Ephemeral });
-    if (targetUser.id === moderator.id) return interaction.reply({ content: '      .', flags: MessageFlags.Ephemeral });
+    if (!guild) return interaction.reply({ content: 'Команда доступна только на сервере.', flags: MessageFlags.Ephemeral });
+    if (targetUser.bot) return interaction.reply({ content: 'Нельзя выдать предупреждение боту.', flags: MessageFlags.Ephemeral });
+    if (targetUser.id === moderator.id) return interaction.reply({ content: 'Вы не можете выдать предупреждение самому себе.', flags: MessageFlags.Ephemeral });
 
     // API-backed implementation (API-only)
       const guildId = guild.id;
       const member = await guild.members.fetch(targetUser.id).catch(() => null);
-      if (!member) return interaction.reply({ content: '    .', flags: MessageFlags.Ephemeral });
+      if (!member) return interaction.reply({ content: 'Не удалось получить пользователя на сервере.', flags: MessageFlags.Ephemeral });
 
       // 1) Check settings.enabled via API
       const WarnService = require('../../../services/WarnService');
       const warnSvc = WarnService();
       const settings = await warnSvc.getSettings(guildId).catch(() => null);
       if (settings && settings.enabled === false) {
-        return interaction.reply({ content: '    .', flags: MessageFlags.Ephemeral });
+        return interaction.reply({ content: 'Система предупреждений отключена.', flags: MessageFlags.Ephemeral });
       }
 
       // 2) Create warn via API (store reason label as provided string)
@@ -73,15 +73,15 @@ module.exports = {
           const durationMin = Number(matched.durationMinutes ?? 0);
           const durationMs = durationMin * 60 * 1000;
           if (type === 'ban') {
-            await member.ban({ reason: `  (: ${warnCount})` });
-            actionText = ' .';
+            await member.ban({ reason: `Warn escalation (count: ${warnCount})` });
+            actionText = 'Пользователь заблокирован.';
           } else if (type === 'kick') {
-            await member.kick(`  (: ${warnCount})`);
-            actionText = ' .';
+            await member.kick(`Warn escalation (count: ${warnCount})`);
+            actionText = 'Пользователь кикнут.';
           } else if (type === 'mute') {
             if (Number.isFinite(durationMs) && durationMs > 0) {
-              await member.timeout(durationMs, '-   ');
-              actionText = `   ${durationMin} .`;
+              await member.timeout(durationMs, 'Warn escalation timeout');
+              actionText = `Тайм-аут на ${durationMin} минут.`;
             }
           }
         }
@@ -96,14 +96,14 @@ module.exports = {
           const ch = guild.channels.cache.get(logChannelId) || await guild.channels.fetch(logChannelId).catch(() => null);
           if (ch && ch.isTextBased()) {
             const fields = [
-              { name: '', value: reasonLabel, inline: false },
-              { name: ' ', value: String(warnCount), inline: true },
+              { name: 'Причина', value: reasonLabel, inline: false },
+              { name: 'Всего предупреждений', value: String(warnCount), inline: true },
             ];
-            if (actionText) fields.push({ name: '', value: actionText, inline: true });
+            if (actionText) fields.push({ name: 'Доп. действие', value: actionText, inline: true });
             const embed = new EmbedBuilder()
               .setColor(0x2F3136)
-              .setTitle(' ')
-              .setDescription(` <@${targetUser.id}>    <@${moderator.id}>`)
+              .setTitle('Выдано предупреждение')
+              .setDescription(`Пользователь <@${targetUser.id}> получил предупреждение от <@${moderator.id}>`)
               .addFields(fields)
               .setTimestamp();
             ch.send({ embeds: [embed] }).catch(() => null);
@@ -114,19 +114,19 @@ module.exports = {
       try {
         const dmEmbed = new EmbedBuilder()
           .setColor(0x2F3136)
-          .setTitle('')
-          .setDescription(`     **${guild.name}**`)
+          .setTitle('Вы получили предупреждение')
+          .setDescription(`На сервере **${guild.name}** вам выдано предупреждение.`)
           .addFields(
-            { name: '', value: reasonLabel, inline: false },
-            { name: '', value: `<@${moderator.id}>`, inline: true },
-            { name: ' ', value: String(warnCount), inline: true },
+            { name: 'Причина', value: reasonLabel, inline: false },
+            { name: 'Модератор', value: `<@${moderator.id}>`, inline: true },
+            { name: 'Всего предупреждений', value: String(warnCount), inline: true },
           )
           .setFooter({ text: guild.name })
           .setTimestamp();
         await targetUser.send({ embeds: [dmEmbed] }).catch(() => null);
       } catch {}
 
-      return interaction.reply({ content: `  .  : ${warnCount}${actionText ? `\n${actionText}` : ''}`, flags: MessageFlags.Ephemeral });
+      return interaction.reply({ content: `Предупреждение выдано. Текущее количество: ${warnCount}${actionText ? `\n${actionText}` : ''}`, flags: MessageFlags.Ephemeral });
   }
 };
 

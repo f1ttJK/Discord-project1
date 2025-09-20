@@ -17,17 +17,17 @@ module.exports = {
     const currentPage = Number.parseInt(String(pageArg || '1'), 10) || 1;
     const id = Number.parseInt(String(idRaw), 10);
     if (!Number.isFinite(id)) {
-      return interaction.reply({ content: "  ID .", flags: MessageFlags.Ephemeral });
+      return interaction.reply({ content: 'Некорректный ID.', flags: MessageFlags.Ephemeral });
     }
     // Open confirmation modal with one-time code
     const code = generateCode();
     const modal = new ModalBuilder()
       .setCustomId(`settings:reason-delete-confirm:${id}:p:${currentPage}:code:${code}`)
-      .setTitle(' ?');
+      .setTitle('Удалить причину?');
 
     const confirmInput = new TextInputBuilder()
       .setCustomId('confirm')
-      .setLabel(`  : ${code}`)
+      .setLabel(`Введите код: ${code}`)
       .setStyle(TextInputStyle.Short)
       .setRequired(true);
 
